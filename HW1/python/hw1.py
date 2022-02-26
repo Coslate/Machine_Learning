@@ -2,13 +2,15 @@
 '''
     Author      : BCC
     Date        : 2022/02/24
-
 '''
 
 import argparse
+import math
 import sys
 import re
-#import numpy as np
+import numpy as np
+
+EPSILON = pow(10, -14) #wiki 1e^-14
 
 #########################
 #     Main-Routine      #
@@ -23,12 +25,20 @@ def main():
     #Form the design matrix & b
     (design_matrix, b) = FormMatrix(input_data, poly_num)
 
+    #Form the identity matrix and multiply it with lamb
+    identity_matrix = MatrixIdentityGen(len(design_matrix[0]), lamb)
 
+    #Method1 - Use LU decomposition for solving LSE regularization.
+    lse_parameter_x = LSEMethod(design_matrix, identity_matrix, b)
 
+    #CalculateError for Method1
+    (error_val_lse, error_result_lse) = ErrorCalculation(design_matrix, lse_parameter_x, b)
 
+    #Method2 - Use Newton's Method for solving LSE.
+    newton_parameter_x = NewtonMethod(design_matrix, b, is_debug)
 
-
-
+    #CalculateError for Method2
+    (error_val_newton, error_result_newton) = ErrorCalculation(design_matrix, newton_parameter_x, b)
 
     #Print the debug messages when necessary
     if(is_debug):
@@ -43,7 +53,7 @@ def main():
     #        print(f'{index}, w[0] = {str(w[0])}, w[1] = {str(w[1])}')
             print(f'{str(w[0])},{str(w[1])}')
 
-        print(f"")
+        print(f"====================")
         print(f"Mul test:")
         test_A = [[1, 2, 3],
                 [4, 5, 6],
@@ -59,7 +69,7 @@ def main():
         PrintMatrix(test_B, 'test_B')
         PrintMatrix(matrix_c, 'matrix_c')
 
-        print(f"")
+        print(f"====================")
         print(f"Add test:")
 
         test_A = [[1, 2, 3],
@@ -75,7 +85,79 @@ def main():
         PrintMatrix(test_B, 'test_B')
         PrintMatrix(matrix_c, 'matrix_c')
 
+        print(f"====================")
+        print(f"Sub test:")
 
+        test_A = [[1, 2, 3],
+                [4, 5, 6],
+                [2, 6, 6]]
+
+        test_B = [[1, 3, 99],
+                [7, 9, 1],
+                [4, 88, 21]]
+
+        (matrix_c) = MatrixSub(test_A, test_B)
+        PrintMatrix(test_A, 'test_A')
+        PrintMatrix(test_B, 'test_B')
+        PrintMatrix(matrix_c, 'matrix_c')
+
+        print(f"====================")
+        print(f"Transpose test:")
+
+        test_B = [[1, 3, 99],
+                [7, 9, 1]]
+
+        (matrix_c) = MatrixTranspose(test_B)
+        PrintMatrix(test_B, 'test_B')
+        PrintMatrix(matrix_c, 'matrix_c')
+
+        print(f"====================")
+        print(f"Identity test:")
+        (matrix_c) = MatrixIdentityGen(5, 20);
+        PrintMatrix(matrix_c, 'matrix_c')
+
+        print(f"====================")
+        print(f"Inverse test:")
+
+        test_A = [[1, 2, 3],
+                [4, 5, 6],
+                [2, 6, 6]]
+
+        test_B = [[1, 3, 99],
+                [7, 9, 1],
+                [4, 88, 21]]
+
+        (matrix_a_inv) = MatrixInverse(test_A)
+        (matrix_b_inv) = MatrixInverse(test_B)
+        PrintMatrix(test_A, 'test_A')
+        PrintMatrix(test_B, 'test_B')
+        PrintMatrix(matrix_a_inv, 'test_A_inv')
+        PrintMatrix(matrix_b_inv, 'test_B_inv')
+
+        print(f"====================")
+        print(f"MatrixMulScalar test:")
+
+        test_A = [[1, 2, 3],
+                [4, 5, 6],
+                [2, 6, 6]]
+
+        (matrix_c) = MatrixMulScalar(test_A, 20)
+        PrintMatrix(test_A, 'test_A')
+        PrintMatrix(matrix_c, 'matrix_c')
+
+        print(f"====================")
+        PrintMatrix(lse_parameter_x, "lse_parameter_x")
+
+        print(f"====================")
+        PrintMatrix(error_result_lse, "error_result_lse")
+        print(f"error_val_lse = {error_val_lse}")
+
+        print(f"====================")
+        PrintMatrix(newton_parameter_x, "newton_parameter_x")
+
+        print(f"====================")
+        PrintMatrix(error_result_newton, "error_result_newton")
+        print(f"error_val_newton = {error_val_newton}")
 
 #########################
 #     Sub-Routine       #
@@ -99,7 +181,7 @@ def ArgumentParser():
     if args.poly_num:
         poly_num = int(args.poly_num)
     if args.lamb:
-        lamb = args.lamb
+        lamb = float(args.lamb)
     if args.is_debug:
         is_debug = int(args.is_debug)
 
@@ -119,7 +201,118 @@ def ArgumentParser():
 
     return (input_file, poly_num, lamb, is_debug)
 
-def MatrixAdd(matrix_a, matrix_b):
+def ErrorCalculation(design_matrix, parameter_x, b):
+    matrix_axminb   = MatrixSub(MatrixMul(design_matrix, parameter_x), b) #A*x-b
+    matrix_axminb_t = MatrixTranspose(matrix_axminb) #(A*x-b)^T
+    error_result    = MatrixMul(matrix_axminb_t, matrix_axminb) #||A*x-b||^2
+
+    return (error_result[0][0], error_result)
+
+def ErrorVectorCalculation(vector_x):
+    return (math.sqrt(MatrixMul(MatrixTranspose(vector_x), vector_x)[0][0])) # sqrt(||x||^2)
+
+def NewtonMethod(design_matrix, b, is_debug):
+    parameter_x               = MatrixTranspose([[0 for i in range(len(design_matrix[0]))]]) #x0 initial point
+    design_matrix_t           = MatrixTranspose(design_matrix)
+    tmp_matrix_2atb           = MatrixMulScalar(MatrixMul(design_matrix_t, b), 2) #2AT*b
+    tmp_design_matrix_gram    = MatrixMul(design_matrix_t, design_matrix) #AT*A 
+    tmp_design_matrix_2gram   = MatrixMulScalar(tmp_design_matrix_gram, 2) #2(AT*A)
+    hessian_matrix            = tmp_design_matrix_2gram #2(AT*A)
+    hessian_matrix_inv        = MatrixInverse(hessian_matrix)
+    index = 0
+
+    while (True):
+        tmp_design_matrix_2gram_x = MatrixMul(tmp_design_matrix_2gram, parameter_x) #2AT*A*x
+        matrix_gradient_x = MatrixSub(tmp_design_matrix_2gram_x, tmp_matrix_2atb) #2AT*A*x-2AT*b
+        tmp_parameter_x   = MatrixSub(parameter_x, MatrixMul(hessian_matrix_inv, matrix_gradient_x)) #x1 = x0 - ((H)^-1)*(gradient_x)
+        error_try         = ErrorVectorCalculation(MatrixSub(tmp_parameter_x, parameter_x))
+
+        if(error_try < EPSILON):
+            parameter_x = tmp_parameter_x
+            break
+        else:
+            if(is_debug):
+                print(f"=====index = {index}=====")
+                PrintMatrix(parameter_x, "newton_parameter_x")
+                PrintMatrix(tmp_parameter_x, "tmp_newton_parameter_x")
+                PrintMatrix(MatrixSub(tmp_parameter_x, parameter_x), "MatrixSub()")
+                print(f"error_try = {error_try}")
+                print(f"EPSILON = {EPSILON}")
+
+        parameter_x = tmp_parameter_x
+        index += 1
+    return parameter_x
+
+def LSEMethod(design_matrix, identity_matrix, b):
+    design_matrix_t = MatrixTranspose(design_matrix)
+    tmp_matrix      = MatrixAdd(MatrixMul(design_matrix_t, design_matrix), identity_matrix) #AT*A+lamb*I
+    tmp_matrix_inv  = MatrixInverse(tmp_matrix) #(AT*A+lamb*I)^-1
+    tmp_atb         = MatrixMul(design_matrix_t, b) #AT*b
+    parameter_x     = MatrixMul(tmp_matrix_inv, tmp_atb)#((AT*A+lamb*I)^-1)*AT*b
+
+    return parameter_x
+
+def MatrixMulScalar(matrix_a, scalar=1):
+    row_a = len(matrix_a)
+    col_a = len(matrix_a[0])
+    matrix_c = []
+
+    #initialization matrix_c
+    for i in range(row_a):
+        row = []
+        for j in range(col_a):
+            row.append(0)
+
+        matrix_c.append(row)
+
+    #multiply every element with the scalar
+    for i in range(row_a):
+        for j in range(col_a):
+            matrix_c[i][j] = scalar*matrix_a[i][j]
+
+    return matrix_c
+
+def MatrixInverse(matrix_a):
+    matrix_c = np.linalg.inv(np.array(matrix_a))
+    matrix_c.tolist()
+
+    return matrix_c
+
+def MatrixIdentityGen(dimension, lamb=1):#lamb will multiply with 1 on the diagonal elements
+    matrix_c = []
+
+    for i in range(dimension):
+        row = []
+        for j in range(dimension):
+            if(i==j):
+                row.append(1*lamb)
+            else:
+                row.append(0)
+
+        matrix_c.append(row)
+
+    return matrix_c
+
+def MatrixTranspose(matrix_a):
+    row_a = len(matrix_a)
+    col_a = len(matrix_a[0])
+    matrix_c = []
+
+    #initialization matrix_c
+    for i in range(col_a):
+        row = []
+        for j in range(row_a):
+            row.append(0)
+
+        matrix_c.append(row)
+
+    for i in range(row_a):
+        for j in range(col_a):
+            matrix_c[j][i] = matrix_a[i][j]
+
+    return matrix_c
+
+def MatrixSub(matrix_a, matrix_b):
     row_a = len(matrix_a)
     col_a = len(matrix_a[0])
     row_b = len(matrix_b)
@@ -128,6 +321,32 @@ def MatrixAdd(matrix_a, matrix_b):
 
     if((row_a != row_b) or (col_a != col_b)):
         print(f"Error: Dimensions of matrix_a and matrix_b are different, and cannot be added together.")
+        sys.exit()
+
+    #initialization matrix_c
+    for i in range(row_a):
+        row = []
+        for j in range(col_a):
+            row.append(0)
+
+        matrix_c.append(row)
+
+    #calculatations in matrix_c
+    for i in range(row_a):
+        for j in range(col_a):
+            matrix_c[i][j] = matrix_a[i][j]-matrix_b[i][j]
+
+    return matrix_c
+
+def MatrixAdd(matrix_a, matrix_b):
+    row_a = len(matrix_a)
+    col_a = len(matrix_a[0])
+    row_b = len(matrix_b)
+    col_b = len(matrix_b[0])
+    matrix_c = []
+
+    if((row_a != row_b) or (col_a != col_b)):
+        print(f"Error: Dimensions of matrix_a and matrix_b are different, and cannot be substracted together.")
         sys.exit()
 
     #initialization matrix_c
@@ -191,7 +410,10 @@ def PrintMatrix(input_matrix, matrix_name):
             elif(index_j == (len(rows)-1)):
                 print(f'{input_matrix[index_i][index_j]} ') #will print the same
             else:
-                print(f'{input_matrix[index_i][index_j]} ', end='') #will print the same
+                if(index_j == 0 and index_i != 0):
+                    print(f' {input_matrix[index_i][index_j]} ', end='') #will print the same
+                else:
+                    print(f'{input_matrix[index_i][index_j]} ', end='') #will print the same
 
 
 def FormMatrix(input_data, poly_num):
