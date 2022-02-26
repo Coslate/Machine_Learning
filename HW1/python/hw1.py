@@ -24,18 +24,9 @@ def main():
     (design_matrix, b) = FormMatrix(input_data, poly_num)
 
 
-    test_A = [[1, 2, 3],
-              [4, 5, 6]]
 
-    test_B = [[1, 3],
-              [7, 9],
-              [13, 0]]
 
-    (matrix_c) = MatrixMul(test_A, test_B)
 
-    PrintMatrix(test_A, 'test_A')
-    PrintMatrix(test_B, 'test_B')
-    PrintMatrix(matrix_c, 'matrix_c')
 
 
 
@@ -51,6 +42,38 @@ def main():
         for index, w in enumerate(input_data):
     #        print(f'{index}, w[0] = {str(w[0])}, w[1] = {str(w[1])}')
             print(f'{str(w[0])},{str(w[1])}')
+
+        print(f"")
+        print(f"Mul test:")
+        test_A = [[1, 2, 3],
+                [4, 5, 6],
+                [2, 6, 6],
+                [1, 2, 1],]
+
+        test_B = [[1, 3],
+                [7, 9],
+                [13, 0]]
+
+        (matrix_c) = MatrixMul(test_A, test_B)
+        PrintMatrix(test_A, 'test_A')
+        PrintMatrix(test_B, 'test_B')
+        PrintMatrix(matrix_c, 'matrix_c')
+
+        print(f"")
+        print(f"Add test:")
+
+        test_A = [[1, 2, 3],
+                [4, 5, 6],
+                [2, 6, 6]]
+
+        test_B = [[1, 3, 99],
+                [7, 9, 1],
+                [13, 0, 7]]
+
+        (matrix_c) = MatrixAdd(test_A, test_B)
+        PrintMatrix(test_A, 'test_A')
+        PrintMatrix(test_B, 'test_B')
+        PrintMatrix(matrix_c, 'matrix_c')
 
 
 
@@ -81,7 +104,7 @@ def ArgumentParser():
         is_debug = int(args.is_debug)
 
     if(input_file ==  None):
-        print(f"You should set input file name with argument '--input_file' or '-in_f'")
+        print(f"Error: You should set input file name with argument '--input_file' or '-in_f'")
         sys.exit()
 
     if(poly_num ==  None):
@@ -96,11 +119,43 @@ def ArgumentParser():
 
     return (input_file, poly_num, lamb, is_debug)
 
+def MatrixAdd(matrix_a, matrix_b):
+    row_a = len(matrix_a)
+    col_a = len(matrix_a[0])
+    row_b = len(matrix_b)
+    col_b = len(matrix_b[0])
+    matrix_c = []
+
+    if((row_a != row_b) or (col_a != col_b)):
+        print(f"Error: Dimensions of matrix_a and matrix_b are different, and cannot be added together.")
+        sys.exit()
+
+    #initialization matrix_c
+    for i in range(row_a):
+        row = []
+        for j in range(col_a):
+            row.append(0)
+
+        matrix_c.append(row)
+
+    #calculatations in matrix_c
+    for i in range(row_a):
+        for j in range(col_a):
+            matrix_c[i][j] = matrix_a[i][j]+matrix_b[i][j]
+
+    return matrix_c
+
+
 def MatrixMul(matrix_a, matrix_b):
     row_a = len(matrix_a)
     col_a = len(matrix_a[0])
     row_b = len(matrix_b)
     col_b = len(matrix_b[0])
+
+    if(col_a != row_b):
+        print(f"Error: The number of columns of matrix_a is different with the number of rows of matrix_b, and ")
+        print(f"Error: they cannot be multiplied together.")
+        sys.exit()
 
     matrix_c = []
     row_c = row_a
