@@ -277,9 +277,15 @@ def GenFittedString(parameter_x):
             fitted_string += str(abs(parameter_x[x]))
         else:
             if(parameter_x[x+1]>=0):
-                fitted_string += str(abs(parameter_x[x]))+'X^'+str(len_parameter-1-x)+" + "
+                if(x==0):
+                    fitted_string += str(parameter_x[x])+'X^'+str(len_parameter-1-x)+" + "
+                else:
+                    fitted_string += str(abs(parameter_x[x]))+'X^'+str(len_parameter-1-x)+" + "
             else:
-                fitted_string += str(abs(parameter_x[x]))+'X^'+str(len_parameter-1-x)+" - "
+                if(x==0):
+                    fitted_string += str(parameter_x[x])+'X^'+str(len_parameter-1-x)+" - "
+                else:
+                    fitted_string += str(abs(parameter_x[x]))+'X^'+str(len_parameter-1-x)+" - "
 
     return fitted_string
 
