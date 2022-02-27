@@ -9,6 +9,8 @@ import math
 import sys
 import re
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import MultipleLocator #for setting of scale of separating along with x-axis & y-axis.
 
 EPSILON = pow(10, -14) #wiki 1e^-14
 
@@ -39,6 +41,9 @@ def main():
 
     #CalculateError for Method2
     (error_val_newton, error_result_newton) = ErrorCalculation(design_matrix, newton_parameter_x, b)
+
+    #Visualization
+    Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse, error_val_newton)
 
     #Print the debug messages when necessary
     if(is_debug):
@@ -200,6 +205,83 @@ def ArgumentParser():
         lamb = 0
 
     return (input_file, poly_num, lamb, is_debug)
+
+def Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse, error_val_newton):
+    #creat the subplot object
+    fig=plt.subplots(1,2)
+
+    #======================LSE========================#
+    plt.subplot(2, 1, 1)
+    plt.xlim(-6, 6)
+    plt.ylim(-20, 110)
+
+    #setting the scale for separating x, y
+    x_major_locator=MultipleLocator(2)
+    y_major_locator=MultipleLocator(20)
+    ax=plt.gca()
+    ax.xaxis.set_major_locator(x_major_locator)
+    ax.yaxis.set_major_locator(y_major_locator)
+
+    #plot the input_data points in red
+    x = [rows[0] for rows in input_data]
+    y = [rows[1] for rows in input_data]
+    plt.title("LSE Method")
+    plt.scatter(x, y, c='red', s=15, zorder=3)
+
+    #plot the fitting line
+    fitted_str = GenFittedString([rows[0] for rows in lse_parameter_x])
+    print(f'LSE: ')
+    print(f'Fitting line: {fitted_str}')
+    print(f'Total error: {error_val_lse}')
+    fitted = np.poly1d([rows[0] for rows in lse_parameter_x])
+    xaxis_range = np.arange(-7, 7)
+    yaxis_range = fitted(xaxis_range)
+    plt.plot(xaxis_range, yaxis_range)
+
+    #======================Newton========================#
+    plt.subplot(2, 1, 2)
+    plt.xlim(-6, 6)
+    plt.ylim(-20, 110)
+
+    #setting the scale for separating x, y
+    x_major_locator=MultipleLocator(2)
+    y_major_locator=MultipleLocator(20)
+    ax=plt.gca()
+    ax.xaxis.set_major_locator(x_major_locator)
+    ax.yaxis.set_major_locator(y_major_locator)
+
+    #plot the input_data points in red
+    x = [rows[0] for rows in input_data]
+    y = [rows[1] for rows in input_data]
+    plt.title("Newton Method")
+    plt.scatter(x, y, c='red', s=15, zorder=3)
+
+    #plot the fitting line
+    fitted_str = GenFittedString([rows[0] for rows in newton_parameter_x])
+    print(f"Newton's Method: ")
+    print(f'Fitting line: {fitted_str}')
+    print(f'Total error: {error_val_newton}')
+    fitted = np.poly1d([rows[0] for rows in newton_parameter_x])
+    xaxis_range = np.arange(-7, 7)
+    yaxis_range = fitted(xaxis_range)
+    plt.plot(xaxis_range, yaxis_range)
+
+    #show the plot
+    plt.show()
+
+def GenFittedString(parameter_x):
+    fitted_string = ''
+    len_parameter = len(parameter_x)
+    for x in range(len_parameter):
+        if(x==len_parameter-1):
+            fitted_string += str(abs(parameter_x[x]))
+        else:
+            if(parameter_x[x+1]>=0):
+                fitted_string += str(abs(parameter_x[x]))+'X^'+str(len_parameter-1-x)+" + "
+            else:
+                fitted_string += str(abs(parameter_x[x]))+'X^'+str(len_parameter-1-x)+" - "
+
+    return fitted_string
 
 def ErrorCalculation(design_matrix, parameter_x, b):
     matrix_axminb   = MatrixSub(MatrixMul(design_matrix, parameter_x), b) #A*x-b
