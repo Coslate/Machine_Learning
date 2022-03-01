@@ -151,6 +151,26 @@ def main():
         PrintMatrix(matrix_c, 'matrix_c')
 
         print(f"====================")
+        print(f"LU Decomposition test:")
+
+        test_A = [[1, 2, 3],
+                [4, 5, 6],
+                [2, 6, 6]]
+
+        test_B = [[1, 3, 99],
+                [7, 9, 1],
+                [4, 88, 21]]
+
+        (matrix_a_l, matrix_a_u) = LUDecomposition(test_A)
+        (matrix_b_l, matrix_b_u) = LUDecomposition(test_B)
+        PrintMatrix(test_A, 'test_A')
+        PrintMatrix(test_B, 'test_B')
+        PrintMatrix(matrix_a_l, 'matrix_a_l')
+        PrintMatrix(matrix_a_u, 'matrix_a_u')
+        PrintMatrix(matrix_b_l, 'matrix_b_l')
+        PrintMatrix(matrix_b_u, 'matrix_b_u')
+
+        print(f"====================")
         PrintMatrix(lse_parameter_x, "lse_parameter_x")
 
         print(f"====================")
@@ -303,7 +323,7 @@ def NewtonMethod(design_matrix, b, is_debug):
     parameter_x               = MatrixTranspose([[0 for i in range(len(design_matrix[0]))]]) #x0 initial point
     design_matrix_t           = MatrixTranspose(design_matrix)
     tmp_matrix_2atb           = MatrixMulScalar(MatrixMul(design_matrix_t, b), 2) #2AT*b
-    tmp_design_matrix_gram    = MatrixMul(design_matrix_t, design_matrix) #AT*A 
+    tmp_design_matrix_gram    = MatrixMul(design_matrix_t, design_matrix) #AT*A
     tmp_design_matrix_2gram   = MatrixMulScalar(tmp_design_matrix_gram, 2) #2(AT*A)
     hessian_matrix            = tmp_design_matrix_2gram #2(AT*A)
     hessian_matrix_inv        = MatrixInverse(hessian_matrix)
@@ -533,9 +553,53 @@ def ReadInputFile(input_file):
 
     return input_data
 
-def LUDecomposition():
-    a = 1
-    return ()
+def LUDecomposition(matrix_a):
+    row_a = len(matrix_a)
+    col_a = len(matrix_a[0])
+    matrix_l = []
+    matrix_u = []
+
+    #initialization matrix_l, metrix_u
+    for i in range(row_a):
+        row1 = []
+        row2 = []
+        for j in range(col_a):
+            row1.append(0)
+            row2.append(0)
+
+        matrix_l.append(row1)
+        matrix_u.append(row2)
+
+    #Perform the Doolittle Algorithm
+    for i in range(row_a):
+        for j in range(col_a):
+            #Upper Triangle
+            if(i==0):
+                matrix_u[i][j] = matrix_a[i][j]
+            elif(i>j):
+                matrix_u[i][j] = 0
+            else:
+                tmp_for_u = 0
+                for k in range(i):
+                    tmp_for_u += matrix_l[i][k]*matrix_u[k][j]
+
+                matrix_u[i][j] = matrix_a[i][j] - tmp_for_u
+
+            #Lower Triangle
+            if(j==0):
+                matrix_l[i][j] = matrix_a[i][j]/matrix_u[j][j]
+            elif(j==i):
+                matrix_l[i][j] = 1
+            elif(j>i):
+                matrix_l[i][j] = 0
+            else:
+                tmp_for_l = 0
+                for k in range(j):
+                    tmp_for_l += matrix_l[i][k]*matrix_u[k][j]
+
+                matrix_l[i][j] = (matrix_a[i][j]-tmp_for_l)/matrix_u[j][j]
+
+    return (matrix_l, matrix_u)
 
 #---------------Execution---------------#
 if __name__ == '__main__':
