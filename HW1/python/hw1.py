@@ -12,14 +12,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import MultipleLocator #for setting of scale of separating along with x-axis & y-axis.
 
-EPSILON = pow(10, -14) #wiki 1e^-14
-
 #########################
 #     Main-Routine      #
 #########################
 def main():
     #Process the argument
-    (input_file, poly_num, lamb, is_debug) = ArgumentParser()
+    (input_file, poly_num, lamb, is_debug, EPSILON) = ArgumentParser()
 
     #Get the input data point
     input_data = ReadInputFile(input_file)
@@ -37,13 +35,13 @@ def main():
     (error_val_lse, error_result_lse) = ErrorCalculation(design_matrix, lse_parameter_x, b)
 
     #Method2 - Use Newton's Method for solving LSE.
-    newton_parameter_x = NewtonMethod(design_matrix, b, is_debug)
+    newton_parameter_x = NewtonMethod(design_matrix, b, is_debug, EPSILON)
 
     #CalculateError for Method2
     (error_val_newton, error_result_newton) = ErrorCalculation(design_matrix, newton_parameter_x, b)
 
     #Visualization
-    Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse, error_val_newton)
+    Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse, error_val_newton, is_debug)
 
     #Print the debug messages when necessary
     if(is_debug):
@@ -153,13 +151,16 @@ def main():
         print(f"====================")
         print(f"LU Decomposition test:")
 
-        test_A = [[1, 2, 3],
-                [4, 5, 6],
-                [2, 6, 6]]
+        test_A = [[1, 2, 3, 50],
+                [4, 5, 6, 20],
+                [2, 6, 6,100],
+                [4, 55, 24, 12]]
 
-        test_B = [[1, 3, 99],
-                [7, 9, 1],
-                [4, 88, 21]]
+        test_B = [[1, 3, 99, 2, 55],
+                [7, 9, 1, 66, 7],
+                [4, 88, 21, 76, 333],
+                [4, 55, 23, 55, 666],
+                [43, 5, 12, 3,  4]]
 
         (matrix_a_l, matrix_a_u) = LUDecomposition(test_A)
         (matrix_b_l, matrix_b_u) = LUDecomposition(test_B)
@@ -192,11 +193,13 @@ def ArgumentParser():
     poly_num        = None
     lamb            = None
     is_debug        = 0
+    EPSILON         = pow(10, -8)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_file", "-in_f", help="should set the input file for data.")
     parser.add_argument("--poly_num", "-pln", help="set the number of the polynomial fitting model bases.")
     parser.add_argument("--lamb", "-lmb", help="set the value of lambda for regularization on LSE.")
+    parser.add_argument("--epsilon", "-eps", help="set the error precision of the neighbored steps for terminating the Newton's Method. Default 1e^-8.")
     parser.add_argument("--is_debug", "-isd", help="1 for debug mode; 0 for normal mode.")
 
     args = parser.parse_args()
@@ -207,6 +210,8 @@ def ArgumentParser():
         poly_num = int(args.poly_num)
     if args.lamb:
         lamb = float(args.lamb)
+    if args.epsilon:
+        EPSILON = float(args.epsilon)
     if args.is_debug:
         is_debug = int(args.is_debug)
 
@@ -224,9 +229,9 @@ def ArgumentParser():
         print(f"It will be set to 0.")
         lamb = 0
 
-    return (input_file, poly_num, lamb, is_debug)
+    return (input_file, poly_num, lamb, is_debug, EPSILON)
 
-def Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse, error_val_newton):
+def Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse, error_val_newton, is_debug):
     #creat the subplot object
     fig=plt.subplots(1,2)
 
@@ -254,9 +259,13 @@ def Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse
     print(f'Fitting line: {fitted_str}')
     print(f'Total error: {error_val_lse}')
     fitted = np.poly1d([rows[0] for rows in lse_parameter_x])
-    xaxis_range = np.arange(-7, 7)
+    xaxis_range = np.arange(-7, 7, 0.01)
     yaxis_range = fitted(xaxis_range)
     plt.plot(xaxis_range, yaxis_range)
+    if(is_debug):
+        print(f"LSE, xaxis_range = {xaxis_range}")
+        print(f"LSE, yaxis_range = {yaxis_range}")
+        print(f"================================")
 
     #======================Newton========================#
     plt.subplot(2, 1, 2)
@@ -282,9 +291,13 @@ def Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse
     print(f'Fitting line: {fitted_str}')
     print(f'Total error: {error_val_newton}')
     fitted = np.poly1d([rows[0] for rows in newton_parameter_x])
-    xaxis_range = np.arange(-7, 7)
+    xaxis_range = np.arange(-7, 7, 0.01)
     yaxis_range = fitted(xaxis_range)
     plt.plot(xaxis_range, yaxis_range)
+    if(is_debug):
+        print(f"Newton, xaxis_range = {xaxis_range}")
+        print(f"Newton, yaxis_range = {yaxis_range}")
+        print(f"================================")
 
     #show the plot
     plt.show()
@@ -319,7 +332,7 @@ def ErrorCalculation(design_matrix, parameter_x, b):
 def ErrorVectorCalculation(vector_x):
     return (math.sqrt(MatrixMul(MatrixTranspose(vector_x), vector_x)[0][0])) # sqrt(||x||^2)
 
-def NewtonMethod(design_matrix, b, is_debug):
+def NewtonMethod(design_matrix, b, is_debug, EPSILON):
     parameter_x               = MatrixTranspose([[0 for i in range(len(design_matrix[0]))]]) #x0 initial point
     design_matrix_t           = MatrixTranspose(design_matrix)
     tmp_matrix_2atb           = MatrixMulScalar(MatrixMul(design_matrix_t, b), 2) #2AT*b
@@ -381,10 +394,66 @@ def MatrixMulScalar(matrix_a, scalar=1):
     return matrix_c
 
 def MatrixInverse(matrix_a):
-    matrix_c = np.linalg.inv(np.array(matrix_a))
-    matrix_c.tolist()
+#    matrix_c = np.linalg.inv(np.array(matrix_a))
+#    matrix_c.tolist()
+#    x = matrix_c
 
-    return matrix_c
+    row_a = len(matrix_a)
+    col_a = len(matrix_a[0])
+    y     = []
+    x     = [] #The inverse matrix
+
+    if(row_a != col_a):
+        print(f"Error: Input matrix_a is not a square matrix, and cannot be found an inverse through LU Decomposition.")
+        sys.exit()
+
+    #Initialization of y and x
+    for i in range(row_a):
+        row_y = []
+        row_x = []
+        for j in range(col_a):
+            row_y.append(0)
+            row_x.append(0)
+
+        y.append(row_y)
+        x.append(row_x)
+
+
+    #Perform the LU Decomposition
+    (matrix_a_l, matrix_a_u) = LUDecomposition(matrix_a)
+
+    #Perform the inverse - first step  : find the y of Ly = [e1 e2 e3], where e1, e2, e3 are columns of I
+    for i in range(row_a):
+        for j in range(col_a):
+            if(i==0):
+                if(j==0):
+                    y[i][j] = 1
+                else:
+                    y[i][j] = 0
+            else:
+                if(i==j):
+                    tmp_y = 0
+                    for k in range(i):
+                        tmp_y += matrix_a_l[i][k]*y[k][j]
+                    y[i][j] = 1 - tmp_y
+                else:
+                    tmp_y = 0
+                    for k in range(i):
+                        tmp_y += matrix_a_l[i][k]*y[k][j]
+                    y[i][j] = -tmp_y
+
+    #Perform the inverse - second step : find the x of Ux = [y1 y2 y3], where y1, y2, y3 are columns of y
+    for i in range((row_a-1), -1, -1):
+        for j in range(col_a):
+            if(i == (row_a-1)):
+                x[i][j] = y[i][j]/matrix_a_u[i][i]
+            else:
+                tmp_x = 0
+                for k in range((row_a-1), i, -1):
+                    tmp_x += x[k][j]*matrix_a_u[i][k]
+                x[i][j] = (y[i][j]-tmp_x)/matrix_a_u[i][i]
+
+    return x
 
 def MatrixIdentityGen(dimension, lamb=1):#lamb will multiply with 1 on the diagonal elements
     matrix_c = []
