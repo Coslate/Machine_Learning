@@ -8,6 +8,7 @@ import argparse
 import math
 import sys
 import re
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import MultipleLocator #for setting of scale of separating along with x-axis & y-axis.
@@ -124,7 +125,7 @@ def main():
 
         test_A = [[1, 2, 3],
                 [4, 5, 6],
-                [2, 6, 6]]
+                [2, 4, 100]]
 
         test_B = [[1, 3, 99],
                 [7, 9, 1],
@@ -152,7 +153,7 @@ def main():
         print(f"LU Decomposition test:")
 
         test_A = [[1, 2, 3, 50],
-                [4, 5, 6, 20],
+                [2, 1, 7, 100],
                 [2, 6, 6,100],
                 [4, 55, 24, 12]]
 
@@ -170,6 +171,41 @@ def main():
         PrintMatrix(matrix_a_u, 'matrix_a_u')
         PrintMatrix(matrix_b_l, 'matrix_b_l')
         PrintMatrix(matrix_b_u, 'matrix_b_u')
+        print(f"====================")
+        print(f"DeterminationCal test:")
+
+        test_A = [[-2, 2, -3],
+                [-1, 1, 3],
+                [2, 0, -1]]
+
+        test_B = [[1, 2, 3, 4],
+                [5, 6, 7, 8],
+                [9, 10, 11, 12],
+                [13,14, 15, 16]]
+
+        test_C = [[1, 2, 3, 4],
+                [8, 5, 6, 7],
+                [9, 12, 10, 11],
+                [13,14, 16, 15]]
+
+        test_D = [[1, 2, 3, 4, 1],
+                [8,  5,  6,  7, 2],
+                [9, 12, 10, 11, 3],
+                [13,14, 16, 15, 4],
+                [10, 8,  6,  4, 2]]
+
+        (det_a) = DeterminationCal(test_A)
+        (det_b) = DeterminationCal(test_B)
+        (det_c) = DeterminationCal(test_C)
+        (det_d) = DeterminationCal(test_D)
+        PrintMatrix(test_A, 'test_A')
+        PrintMatrix(test_B, 'test_B')
+        PrintMatrix(test_C, 'test_C')
+        PrintMatrix(test_D, 'test_D')
+        print(f'det_a = {det_a}')
+        print(f'det_b = {det_b}')
+        print(f'det_c = {det_c}')
+        print(f'det_d = {det_d}')
 
         print(f"====================")
         PrintMatrix(lse_parameter_x, "lse_parameter_x")
@@ -378,7 +414,7 @@ def MatrixMulScalar(matrix_a, scalar=1):
     col_a = len(matrix_a[0])
     matrix_c = []
 
-    #initialization matrix_c
+    #Initialization matrix_c
     for i in range(row_a):
         row = []
         for j in range(col_a):
@@ -386,7 +422,7 @@ def MatrixMulScalar(matrix_a, scalar=1):
 
         matrix_c.append(row)
 
-    #multiply every element with the scalar
+    #Multiply every element with the scalar
     for i in range(row_a):
         for j in range(col_a):
             matrix_c[i][j] = scalar*matrix_a[i][j]
@@ -404,8 +440,12 @@ def MatrixInverse(matrix_a):
     x     = [] #The inverse matrix
 
     if(row_a != col_a):
-        print(f"Error: Input matrix_a is not a square matrix, and cannot be found an inverse through LU Decomposition.")
+        print(f"Error: Input matrix: {matrix_a} is not a square matrix, and cannot be found an inverse through LU Decomposition.")
         sys.exit()
+    if(DeterminationCal(matrix_a, row_a, col_a) == 0):
+        print(f"Error: The det of matrix: {matrix_a} is 0, so it is not invertible.")
+        sys.exit()
+
 
     #Initialization of y and x
     for i in range(row_a):
@@ -475,7 +515,7 @@ def MatrixTranspose(matrix_a):
     col_a = len(matrix_a[0])
     matrix_c = []
 
-    #initialization matrix_c
+    #Initialization matrix_c
     for i in range(col_a):
         row = []
         for j in range(row_a):
@@ -500,7 +540,7 @@ def MatrixSub(matrix_a, matrix_b):
         print(f"Error: Dimensions of matrix_a and matrix_b are different, and cannot be added together.")
         sys.exit()
 
-    #initialization matrix_c
+    #Initialization matrix_c
     for i in range(row_a):
         row = []
         for j in range(col_a):
@@ -526,7 +566,7 @@ def MatrixAdd(matrix_a, matrix_b):
         print(f"Error: Dimensions of matrix_a and matrix_b are different, and cannot be substracted together.")
         sys.exit()
 
-    #initialization matrix_c
+    #Initialization matrix_c
     for i in range(row_a):
         row = []
         for j in range(col_a):
@@ -557,7 +597,7 @@ def MatrixMul(matrix_a, matrix_b):
     row_c = row_a
     col_c = col_b
 
-    #initialization matrix_c
+    #Initialization matrix_c
     for i in range(row_c):
         row = []
         for j in range(col_c):
@@ -622,13 +662,101 @@ def ReadInputFile(input_file):
 
     return input_data
 
+def SwapRow(matrix_a, row_i, row_j, num_row_a, num_col_a):
+    if(row_i >= num_row_a or row_j >= num_col_a):
+        print(f"Error: The input row_i or row_j is larger than the dimenssion of input matrix_a.")
+        sys.exit()
+
+    tmp_row         = copy.deepcopy(matrix_a[row_i])
+    matrix_a[row_i] = copy.deepcopy(matrix_a[row_j])
+    matrix_a[row_j] = copy.deepcopy(tmp_row)
+
+
+def DeterminationCal(matrix_a, row_a=None, col_a=None):
+    if(row_a == None):
+        row_a = len(matrix_a)
+    if(col_a == None):
+        col_a = len(matrix_a[0])
+
+    if(row_a != col_a):
+        print(f"Error: The row and col of matrix_a are not identical, thus input metrix_a does not have det().")
+        sys.exit()
+
+    matrix_a_copy            = copy.deepcopy(matrix_a)
+    have_found_row_to_change = 1
+    det_result               = 0
+    minus_tmp                = 1 #remember for the sign change owing to row exchange.
+    for i in range(row_a):
+        if(matrix_a_copy[i][i] == 0):
+            have_found_row_to_change = 0
+            for redund in range(i+1, row_a):
+                if(matrix_a_copy[redund][i] != 0):
+                    #Do the row exchange, and the result*-1
+                    SwapRow(matrix_a_copy, i, redund, row_a, col_a)
+                    have_found_row_to_change  = 1
+                    minus_tmp                *= -1
+                    break
+        if(have_found_row_to_change == 0):
+            det_result = 0
+            break
+
+        #Perform the row manipulation
+        for redund in range(i+1, row_a):
+            cancel_scalar = matrix_a_copy[redund][i]/matrix_a_copy[i][i]
+            for j in range(i, col_a):
+                matrix_a_copy[redund][j] = matrix_a_copy[redund][j] - cancel_scalar*matrix_a_copy[i][j]
+
+    det_result = 1
+    for i in range(row_a):
+        det_result *= matrix_a_copy[i][i]
+    det_result *= minus_tmp
+
+    return det_result
+
+def LeadingPrincipalSubmatrixFormation(matrix_a, n):
+    sub_matrix = []
+    for i in range(n):
+        row = []
+        for j in range(n):
+            row.append(matrix_a[i][j])
+
+        sub_matrix.append(row)
+
+    return sub_matrix
+
+
+def LeadingPrincipalMinorCheck(matrix_a):
+    row_a = len(matrix_a)
+    col_a = len(matrix_a[0])
+    det_has_zero = False
+    nsub         = -1
+    for i in range(row_a):
+        sub_matrix = LeadingPrincipalSubmatrixFormation(matrix_a, i+1)
+        det_result = DeterminationCal(sub_matrix)
+
+        if(det_result == 0):
+            det_has_zero = True
+            nsub         = i+1
+            break
+
+    return (det_has_zero, nsub)
+
+
 def LUDecomposition(matrix_a):
     row_a = len(matrix_a)
     col_a = len(matrix_a[0])
     matrix_l = []
     matrix_u = []
 
-    #initialization matrix_l, metrix_u
+    #Check all leading principal submatrix has non-zero det.
+    (det_has_zero, nsub) = LeadingPrincipalMinorCheck(matrix_a)
+    if(det_has_zero):
+        print(f"Error: The input matrix: {matrix_a} has 0 det in the {nsub} level of its leading principal submatrix.")
+        print(f"Error: Thus, this matrix has no LU Decomposition, and the inverse by LU Decomposition fails.")
+        sys.exit()
+
+
+    #Initialization matrix_l, metrix_u
     for i in range(row_a):
         row1 = []
         row2 = []
