@@ -194,18 +194,27 @@ def main():
                 [13,14, 16, 15, 4],
                 [10, 8,  6,  4, 2]]
 
+        test_E = [[0, 2, 3, 4, 1],
+                [0,  5,  6,  7, 2],
+                [9, 12, 10, 11, 3],
+                [13,14, 16, 15, 4],
+                [10, 8,  6,  4, 2]]
+
         (det_a) = DeterminationCal(test_A)
         (det_b) = DeterminationCal(test_B)
         (det_c) = DeterminationCal(test_C)
         (det_d) = DeterminationCal(test_D)
+        (det_e) = DeterminationCal(test_E)
         PrintMatrix(test_A, 'test_A')
         PrintMatrix(test_B, 'test_B')
         PrintMatrix(test_C, 'test_C')
         PrintMatrix(test_D, 'test_D')
+        PrintMatrix(test_E, 'test_E')
         print(f'det_a = {det_a}')
         print(f'det_b = {det_b}')
         print(f'det_c = {det_c}')
         print(f'det_d = {det_d}')
+        print(f'det_e = {det_e}')
 
         print(f"====================")
         PrintMatrix(lse_parameter_x, "lse_parameter_x")
@@ -256,13 +265,12 @@ def ArgumentParser():
         sys.exit()
 
     if(poly_num ==  None):
-        print(f"You did not set the number of the polynomial fitting model bases.")
-        print(f"It will be set to 0.")
-        poly_num = 0
+        print(f"Error: You did not set the number of the polynomial fitting model bases.")
+        sys.exit()
 
     if(lamb ==  None):
-        print(f"You did not set the value of lambda for regularization on LSE.")
-        print(f"It will be set to 0.")
+        print(f"Warning: You did not set the value of lambda for regularization on LSE.")
+        print(f"Warning: It will be set to 0.")
         lamb = 0
 
     return (input_file, poly_num, lamb, is_debug, EPSILON)
