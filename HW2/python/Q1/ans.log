@@ -1,0 +1,24 @@
+file         = ./sample/train-labels-idx1-ubyte.gz
+magic_num    = 2049
+num_of_items = 60000
+file         = ./sample/train-images-idx3-ubyte.gz
+magic_num    = 2051
+num_of_items = 60000
+num_of_rows  = 28
+num_of_cols  = 28
+len(x_data) = 60000, x_data = 
+file         = ./sample/t10k-labels-idx1-ubyte.gz
+magic_num    = 2049
+num_of_items = 10000
+file         = ./ungzip_sample/t10k-images.idx3-ubyte
+magic_num    = 2051
+num_of_items = 10000
+num_of_rows  = 28
+num_of_cols  = 28
+len(x_data) = 10000, x_data = 
+infile_train_label = ./sample/train-labels-idx1-ubyte.gz
+infile_train_image = ./sample/train-images-idx3-ubyte.gz
+infile_test_label  = ./sample/t10k-labels-idx1-ubyte.gz
+infile_test_image  = ./ungzip_sample/t10k-images.idx3-ubyte
+toggle = 0
+train_y[50145] = 9
