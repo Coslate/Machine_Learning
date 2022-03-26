@@ -703,7 +703,7 @@ def DisplayImagination(imagination_result, rows=28, cols=28):
         for i in range(rows):
             for j in range(cols):
                 if(imagination_result[label][i][j] == 1):
-                    print(color.RED+"1 "+color.END, end='')
+                    print(color.CYAN+"1 "+color.END, end='')
                 else:
                     print(f"0 ", end='')
             print(f"")
