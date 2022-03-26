@@ -36,7 +36,7 @@ class color:
 #########################
 def main():
     #Process the argument
-    (infile_train_label, infile_train_image, infile_test_label, infile_test_image, toggle, pseudo_cnt_method, PSEUDO_CNST, method, d_gauss, image_method_disc, is_debug) = ArgumentParser()
+    (infile_train_label, infile_train_image, infile_test_label, infile_test_image, toggle, pseudo_cnt_method, PSEUDO_CNST, method, d_gauss, image_method_disc, use_color, is_debug) = ArgumentParser()
 
     #Get the input data point
     train_y = ReadLabelFile(infile_train_label, 2049, is_debug)
@@ -54,7 +54,7 @@ def main():
     (posteriori_result, min_index_result, error_rate) = TestProcedure(test_y, test_x, all_ximage_storing, all_disximage_storing, prior_prob, min_map_stats, bin_map_stats, toggle, pseudo_cnt_method, PSEUDO_CNST, len(test_x[0]), len(test_x[0][0]), method, d_gauss)
 
     #Print the result
-    PrintResult(test_y, posteriori_result, min_index_result, error_rate, toggle, imagination_result, len(test_x[0]), len(test_x[0][0]))
+    PrintResult(test_y, posteriori_result, min_index_result, error_rate, toggle, imagination_result, use_color, len(test_x[0]), len(test_x[0][0]))
 
     #Print the debug messages when necessary
     if(is_debug):
@@ -134,6 +134,7 @@ def ArgumentParser():
     method            = None
     d_gauss           = None
     image_method_disc = None
+    use_color         = None
     is_debug          = 0
 
     parser = argparse.ArgumentParser()
@@ -141,12 +142,13 @@ def ArgumentParser():
     parser.add_argument("--infile_train_image", "-inf_tr_image", help="should set the input training image file.")
     parser.add_argument("--infile_test_label", "-inf_tst_label", help="should set the input testing label file.")
     parser.add_argument("--infile_test_image", "-inf_tst_image", help="should set the input testing image file.")
-    parser.add_argument("--toggle", "-tgl", help="set '0' for discrete mode, '1' for continuous mode.")
-    parser.add_argument("--pseudo_cnt_method", "-psc_method", help="set '0' for finding min bin count that is not zero in the pixel position when encounting empty bin, '1' for directly setting the empty bin to the number of PSEUDO_CNST.")
-    parser.add_argument("--PSEUDO_CNST", "-PSC_CNST", help="set the PSEUDO_CNST, which is used when '--pseudo_cnt_method 1' is set.")
-    parser.add_argument("--method", "-mthd", help="set the method when calculating Gaussian probability in continuous mode. '0' for directly using Gaussian PDF. '1' for adding PDF in the range of [intensity-d_gauss, intensity+d_gauss]. '2' for first transforming to Z-score of x+d_gauss and x-d_gauss, then using Z-table of these two values to calculate prob = prob(Z(x+d_gauss)) - prob(Z(x-d_gauss)).")
-    parser.add_argument("--d_gauss", "-dg", help="set the deviation for calculating Gaussian probabily at center x using Z-table.")
-    parser.add_argument("--image_method_disc", "-im_mth_disc", help="set '0' for using expectation on 32bins to calculate the mean value and use it to compare whether >=16 to print '1' or '0' otherwise. set '1' for using whether number of bins in [0, 15] is larger than [16, 31], and to set it '0' or '1' otherwise.")
+    parser.add_argument("--toggle", "-tgl", help="Set '0' for discrete mode, '1' for continuous mode.")
+    parser.add_argument("--pseudo_cnt_method", "-psc_method", help="Set '0' for finding min bin count that is not zero in the pixel position when encounting empty bin, '1' for directly setting the empty bin to the number of PSEUDO_CNST.")
+    parser.add_argument("--PSEUDO_CNST", "-PSC_CNST", help="Set the PSEUDO_CNST, which is used when '--pseudo_cnt_method 1' is set.")
+    parser.add_argument("--method", "-mthd", help="Set the method when calculating Gaussian probability in continuous mode. '0' for directly using Gaussian PDF. '1' for adding PDF in the range of [intensity-d_gauss, intensity+d_gauss]. '2' for first transforming to Z-score of x+d_gauss and x-d_gauss, then using Z-table of these two values to calculate prob = prob(Z(x+d_gauss)) - prob(Z(x-d_gauss)).")
+    parser.add_argument("--d_gauss", "-dg", help="Set the deviation for calculating Gaussian probabily at center x using Z-table.")
+    parser.add_argument("--image_method_disc", "-im_mth_disc", help="Set '0' for using expectation on 32bins to calculate the mean value and use it to compare whether >=16 to print '1' or '0' otherwise. Set '1' for using whether number of bins in [0, 15] is larger than [16, 31], and to set it '0' or '1' otherwise.")
+    parser.add_argument("--use_color", "-uc", help="Set 1 to use color for display the imagination of Naive Baye's Classifier. Set 0 to print in plain text.")
     parser.add_argument("--is_debug", "-isd", help="1 for debug mode; 0 for normal mode.")
 
     args = parser.parse_args()
@@ -171,6 +173,8 @@ def ArgumentParser():
         d_gauss = float(args.d_gauss)
     if args.image_method_disc:
         image_method_disc = int(args.image_method_disc)
+    if args.use_color:
+        use_color = int(args.use_color)
     if args.is_debug:
         is_debug = int(args.is_debug)
 
@@ -205,16 +209,17 @@ def ArgumentParser():
         sys.exit()
 
     if(method == None):
-        print(f"Warning: You did not set the method using '--method', the method will be set to 0.")
         method = 0
 
     if(d_gauss == None):
-        print(f"Warning: You did not set the d_gauss using '--d_gauss', the d_gauss will be set to 0.5.")
         d_gauss = 0.5
 
     if(image_method_disc == None and toggle == 0):
         print(f"Warning: You did not set the image_method_disc using '--image_method_disc', the image_method_disc will be set to 1.")
         image_method_disc = 1
+
+    if(use_color == None):
+        use_color = 1
 
     if(is_debug):
         print(f"infile_train_label = {infile_train_label}")
@@ -227,8 +232,9 @@ def ArgumentParser():
         print(f"method             = {method}")
         print(f"d_gauss            = {d_gauss}")
         print(f"image_method_disc  = {image_method_disc}")
+        print(f"use_color          = {use_color}")
 
-    return (infile_train_label, infile_train_image, infile_test_label, infile_test_image, toggle, pseudo_cnt_method, PSEUDO_CNST, method, d_gauss, image_method_disc, is_debug)
+    return (infile_train_label, infile_train_image, infile_test_label, infile_test_image, toggle, pseudo_cnt_method, PSEUDO_CNST, method, d_gauss, image_method_disc, use_color, is_debug)
 
 
 def ReadLabelFile(file_name, magic_test_num, is_debug):
@@ -385,12 +391,14 @@ def BoundaryCondition(intensity, max_val, min_val):
 
 
 def GaussianProbabilityCal(test_ximage_intensity, mean, var, method, d_gauss):
-    prob = 0
+    prob = 0.5*(math.log(2*math.pi*var) + (1/var)*((test_ximage_intensity-mean)**2))
 
+    '''
     if(method == 0):
         #Already take the -1*log(prob) transform, where prob is the Gaussian probability
         prob = 0.5*(math.log(2*math.pi*var) + (1/var)*((test_ximage_intensity-mean)**2))
     elif(method == 1):
+        prob = 0
         #Already take the -1*log(prob) transform, where prob is the Gaussian probability
         for i in range(int(BoundaryCondition(test_ximage_intensity-d_gauss, 255, 0)), int(BoundaryCondition(test_ximage_intensity+d_gauss, 255, 0) + 1), 1):
             prob += 0.5*(math.log(2*math.pi*var) + (1/var)*((i-mean)**2))
@@ -410,6 +418,7 @@ def GaussianProbabilityCal(test_ximage_intensity, mean, var, method, d_gauss):
 #        print(f"z_front_score = {z_front_score}")
 #        print(f"z_rear_score  = {z_rear_score}")
 #        print(f"-------------")
+    '''
 
     return prob
 
@@ -694,7 +703,7 @@ def ExpectationEstimation(bin_range_list, total_num):
     exp_mean *= 8
     return exp_mean
 
-def DisplayImagination(imagination_result, rows=28, cols=28):
+def DisplayImagination(imagination_result, use_color, rows=28, cols=28):
     print(f"Imagination of numbers in Bayesian classifier:")
     print(f"")
 
@@ -703,7 +712,10 @@ def DisplayImagination(imagination_result, rows=28, cols=28):
         for i in range(rows):
             for j in range(cols):
                 if(imagination_result[label][i][j] == 1):
-                    print(color.CYAN+"1 "+color.END, end='')
+                    if(use_color==1):
+                        print(color.CYAN+"1 "+color.END, end='')
+                    else:
+                        print("1 ", end='')
                 else:
                     print(f"0 ", end='')
             print(f"")
@@ -729,7 +741,7 @@ def ShowImage(image_matrix):
     im = plt.imshow(image_matrix, cmap='gray', vmin=0, vmax=255)
     plt.show()
 
-def PrintResult(test_y, posteriori_result, min_index_result, error_rate, toggle, imagination_result, rows=28, cols=28):
+def PrintResult(test_y, posteriori_result, min_index_result, error_rate, toggle, imagination_result, use_color, rows=28, cols=28):
     if(toggle == 0):
         print(f"In Discrete Mode:")
     else:
@@ -742,7 +754,7 @@ def PrintResult(test_y, posteriori_result, min_index_result, error_rate, toggle,
         print(f"")
 
     #Display the imageination of each digit in Naive Baye's Classifier.
-    DisplayImagination(imagination_result, rows, cols)
+    DisplayImagination(imagination_result, use_color, rows, cols)
     print(f"Error rate: {error_rate}")
 
 #---------------Execution---------------#
