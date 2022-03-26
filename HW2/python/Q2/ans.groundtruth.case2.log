@@ -1,0 +1,54 @@
+case1:0101010101001011010101
+Likelihood:0.16818809509277344
+Betaprior:     a = 10 b = 1
+Betaposterior: a = 21 b = 12
+
+case2:0110101
+Likelihood:0.29375515303997485
+Betaprior:     a = 21 b = 12
+Betaposterior: a = 25 b = 15
+
+case3:010110101101
+Likelihood:0.2286054241794335
+Betaprior:      a = 25 b = 15
+Beta posterior: a = 32 b = 20
+
+case4:0101101011101011010
+Likelihood: 0.18286870706509092
+Betaprior:      a = 32 b = 20
+Beta posterior: a = 43 b = 28
+
+case5:111101100011110
+Likelihood:0.2143070548857833
+Betaprior:      a = 43 b = 28
+Beta posterior: a = 53 b = 33
+
+case6:101110111000110
+Likelihood:0.20659760529408
+Betaprior:      a = 53 b = 33
+Beta posterior: a = 62 b = 39
+
+case7:1010010111
+Likelihood: 0.25082265600000003
+Betaprior:      a = 62 b = 39
+Beta posterior: a = 68 b = 43
+
+case8:11101110110
+Likelihood:0.2619678932864457
+Betaprior:      a = 68 b = 43
+Beta posterior: a = 76 b = 46
+
+case9:01000111101
+Likelihood: 0.23609128871506807
+Betaprior:      a = 76 b = 46
+Beta posterior: a = 82 b = 51
+
+case 10: 110100111
+Likelihood: 0.27312909617436365 
+Betaprior:      a = 82 b = 51 
+Beta posterior: a = 88 b = 54
+
+case 11: 01101010111 
+Likelihood: 0.24384881449471862 
+Betaprior:      a = 88 b = 54 
+Beta posterior: a = 95 b = 58

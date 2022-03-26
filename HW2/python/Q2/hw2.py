@@ -15,6 +15,22 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import MultipleLocator #for setting of scale of separating along with x-axis & y-axis.
 
 #########################
+#    Class-Definition   #
+#########################
+
+class color:
+   PURPLE = '\033[1;35;48m'
+   CYAN = '\033[1;36;48m'
+   BOLD = '\033[1;37;48m'
+   BLUE = '\033[1;34;48m'
+   GREEN = '\033[1;32;48m'
+   YELLOW = '\033[1;33;48m'
+   RED = '\033[1;31;48m'
+   BLACK = '\033[1;30;48m'
+   UNDERLINE = '\033[4;37;48m'
+   END = '\033[1;37;0m'
+
+#########################
 #     Main-Routine      #
 #########################
 def main():
@@ -23,6 +39,12 @@ def main():
 
     #Get the input data point
     input_data = ReadInputFile(infile)
+
+    #Perform the online-learning: Beta-Binomial Conjugation.
+    answer_all_cases = OnlineLearningBetaBinonmialConj(input_data, param_a, param_b)
+
+    #Print out the result
+    PrintResult(answer_all_cases, param_a, param_b, input_data)
 
     #Print the debug messages when necessary
     if(is_debug):
@@ -92,6 +114,51 @@ def ReadInputFile(file_name):
 
             input_data.append(row)
     return input_data
+
+def BinomialDistribution(p, N, m, N_min_m):
+    likelihood = (math.factorial(N)/(math.factorial(m)*math.factorial(N_min_m)))*(p**m)*((1-p)**N_min_m)
+    return likelihood
+
+def OnlineLearningBetaBinonmialConj(input_data, param_a, param_b):
+    answer_all_cases = []
+    prior_param_a = param_a
+    prior_param_b = param_b
+
+    for x in range(len(input_data)):
+        this_result   = []
+        this_result.append(prior_param_a)
+        this_result.append(prior_param_b)
+        total_num     = len(input_data[x])
+        one_occur     = input_data[x].count(1)
+        zero_occur    = input_data[x].count(0)
+        theta_est_mle = one_occur/total_num
+        likelihood    = BinomialDistribution(theta_est_mle, total_num, one_occur, zero_occur)
+
+        posteriori_param_a = prior_param_a+one_occur
+        posteriori_param_b = prior_param_b+zero_occur
+        prior_param_a = posteriori_param_a
+        prior_param_b = posteriori_param_b
+
+        this_result.append(likelihood)
+        this_result.append(posteriori_param_a)
+        this_result.append(posteriori_param_b)
+        answer_all_cases.append(this_result)
+
+    return answer_all_cases
+
+def PrintResult(answer_all_cases, param_a, param_b, input_data):
+    print(f"{color.YELLOW}a = {param_a}, b = {param_b}{color.END}")
+    for index, this_result in enumerate(answer_all_cases):
+        input_data_str = "".join(str(x) for x in input_data[index])
+
+        print(f"{color.UNDERLINE}case {(index+1)}: {input_data_str}{color.END}")
+        print(f"Likelihood : {this_result[2]}")
+        print(f"Beta prior     :    a = {this_result[0]} b = {this_result[1]}")
+        print(f"Beta posterior :    a = {this_result[3]} b = {this_result[4]}")
+
+
+
+
 
 #---------------Execution---------------#
 if __name__ == '__main__':
