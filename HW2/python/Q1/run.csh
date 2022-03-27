@@ -38,10 +38,10 @@
 
 
 #---------------------------------------method 2--------------------------------------#
-#Error rate: 
+#Error rate: 0.8865 
 #./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 1 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 2300 --method 2 --d_gauss 0
 
-#Error rate: 
+#Error rate: 0.3461 
 #./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 1 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 2300 --method 2 --d_gauss 1
 
 #Error rate: 0.3171
