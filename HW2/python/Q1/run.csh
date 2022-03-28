@@ -16,7 +16,7 @@
 #./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 0 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 0.000045 --method 0 --d_gauss 1 > ./ans.log
 
 #Error rate: 0.1583
-./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 0 -isd 0 --pseudo_cnt_method 0 --PSEUDO_CNST 0.0001 --image_method_disc 1 --use_color 1
+#./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 0 -isd 0 --pseudo_cnt_method 0 --PSEUDO_CNST 0.0001 --image_method_disc 1 --use_color 1
 
 
 #############################Continuous Mode##############################
