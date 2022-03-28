@@ -11,7 +11,6 @@ import re
 import copy
 import numpy as np
 import gzip
-import scipy.stats as st
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import MultipleLocator #for setting of scale of separating along with x-axis & y-axis.
 
@@ -145,7 +144,7 @@ def ArgumentParser():
     parser.add_argument("--toggle", "-tgl", help="Set '0' for discrete mode, '1' for continuous mode.")
     parser.add_argument("--pseudo_cnt_method", "-psc_method", help="Set '0' for finding min bin count that is not zero in the pixel position when encounting empty bin, '1' for directly setting the empty bin to the number of PSEUDO_CNST.")
     parser.add_argument("--PSEUDO_CNST", "-PSC_CNST", help="Set the PSEUDO_CNST, which is used when '--pseudo_cnt_method 1' is set.")
-    parser.add_argument("--method", "-mthd", help="Set the method when calculating Gaussian probability in continuous mode. '0' for directly using Gaussian PDF. '1' for adding PDF in the range of [intensity-d_gauss, intensity+d_gauss]. '2' for first transforming to Z-score of x+d_gauss and x-d_gauss, then using Z-table of these two values to calculate prob = prob(Z(x+d_gauss)) - prob(Z(x-d_gauss)).")
+    parser.add_argument("--method", "-mthd", help="Set the method when calculating Gaussian probability in continuous mode. '0' for directly using Gaussian PDF. '1' for adding PDF in the range of [intensity-d_gauss, intensity+d_gauss].")
     parser.add_argument("--d_gauss", "-dg", help="Set the deviation for calculating Gaussian probabily at center x using Z-table.")
     parser.add_argument("--image_method_disc", "-im_mth_disc", help="Set '0' for using expectation on 32bins to calculate the mean value and use it to compare whether >=16 to print '1' or '0' otherwise. Set '1' for using whether number of bins in [0, 15] is larger than [16, 31], and to set it '0' or '1' otherwise.")
     parser.add_argument("--use_color", "-uc", help="Set 1 to use color for display the imagination of Naive Baye's Classifier. Set 0 to print in plain text.")
@@ -377,9 +376,6 @@ def StoreClassify(train_y, train_x, toggle, is_debug):
 def GaussianPDF(x, mean, var):
     return ((1/math.sqrt(2*math.pi*var))*math.exp((-1/(2*var))*((x-mean)**2)))
 
-def ZScoreCal(x, mean, var):
-    return (x-mean)/math.sqrt(var)
-
 def BoundaryCondition(intensity, max_val, min_val):
     if(intensity > max_val):
         intensity = max_val
@@ -391,34 +387,18 @@ def BoundaryCondition(intensity, max_val, min_val):
 
 
 def GaussianProbabilityCal(test_ximage_intensity, mean, var, method, d_gauss):
-    prob = 0.5*(math.log(2*math.pi*var) + (1/var)*((test_ximage_intensity-mean)**2))
-
-    '''
     if(method == 0):
-        #Already take the -1*log(prob) transform, where prob is the Gaussian probability
+        #Take the -1*ln(prob) transform, where prob is the Gaussian probability
         prob = 0.5*(math.log(2*math.pi*var) + (1/var)*((test_ximage_intensity-mean)**2))
     elif(method == 1):
-        prob = 0
-        #Already take the -1*log(prob) transform, where prob is the Gaussian probability
+        prob  = 0
         for i in range(int(BoundaryCondition(test_ximage_intensity-d_gauss, 255, 0)), int(BoundaryCondition(test_ximage_intensity+d_gauss, 255, 0) + 1), 1):
-            prob += 0.5*(math.log(2*math.pi*var) + (1/var)*((i-mean)**2))
-    else:
-        #Use Z table
-        z_front_score = ZScoreCal(BoundaryCondition(test_ximage_intensity+d_gauss, 255, 0), mean, var)
-        z_rear_score  = ZScoreCal(BoundaryCondition(test_ximage_intensity-d_gauss, 255, 0), mean, var)
-        prob = st.norm.cdf(z_front_score) - st.norm.cdf(z_rear_score)
+            prob += GaussianPDF(i, mean, var)
 
+        #Take the -1*ln(prob) transform, where prob is the Gaussian probability
         if(prob == 0):
-            prob = 0.00001
+            prob = 0.00000000001
         prob = -1*math.log(prob)
-#        print(f"mean = {mean}")
-#        print(f"var  = {var}")
-#        print(f"prob = {prob}")
-#        print(f"test_ximage_intensity = {test_ximage_intensity}")
-#        print(f"z_front_score = {z_front_score}")
-#        print(f"z_rear_score  = {z_rear_score}")
-#        print(f"-------------")
-    '''
 
     return prob
 
