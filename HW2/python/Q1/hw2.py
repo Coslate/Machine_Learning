@@ -491,7 +491,11 @@ def BinStatisticsEachDiscrete(all_disximage_storing, rows=28, cols=28):
 
         for i in range(rows):
             for j in range(cols):
-                min_val = math.inf
+                #Find proper initial value
+                for x in bin_map[i][j]:
+                    if(x != 0):
+                        min_val = x
+                        break
                 #Find Min
                 for x in bin_map[i][j]:
                     if(x != 0 and x < min_val):
