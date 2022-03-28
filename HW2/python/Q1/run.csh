@@ -57,7 +57,10 @@
 ./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 1 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 2300 --method 1 --d_gauss 2
 
 #Error rate: 0.192
-./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 1 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 2300 --method 1 --d_gauss 4 > ./ans.cont.log
+./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 1 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 2300 --method 1 --d_gauss 4
+
+#Error rate: 0.192
+./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 1 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 2300 --method 1 --d_gauss 4 --use_color 0 > ./ans.cont.log
 
 #Error rate: 0.1874
 #./hw2.py --infile_train_label ./sample/train-labels-idx1-ubyte.gz  --infile_train_image ./sample/train-images-idx3-ubyte.gz --infile_test_label ./sample/t10k-labels-idx1-ubyte.gz --infile_test_image ./sample/t10k-images-idx3-ubyte.gz --toggle 1 -isd 0 --pseudo_cnt_method 1 --PSEUDO_CNST 2300 --method 1 --d_gauss 8

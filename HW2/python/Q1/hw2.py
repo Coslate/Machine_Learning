@@ -44,16 +44,18 @@ def main():
     test_x  = ReadImageFile(infile_test_image, 2051, is_debug)
 
     #Store all training image according to its y
-    (all_ximage_storing, all_disximage_storing, all_xindex_storing) = StoreClassify(train_y, train_x, toggle, is_debug)
+    rows = len(test_x[0])
+    cols = len(test_x[0][0])
+    (all_ximage_storing, all_disximage_storing, all_xindex_storing) = StoreClassify(train_y, train_x, toggle, is_debug, rows, cols)
 
     #Training using all train_y, train_x using Naive Baye's Classifier method
-    (prior_prob, min_map_stats, bin_map_stats, imagination_result) = TrainProcedure(all_ximage_storing, all_disximage_storing, toggle, image_method_disc, len(test_x[0]), len(test_x[0][0]))
+    (prior_prob, min_map_stats, bin_map_stats, imagination_result) = TrainProcedure(all_ximage_storing, all_disximage_storing, toggle, image_method_disc, rows, cols)
 
     #Test each image in test_x with ground truth test_y
-    (posteriori_result, min_index_result, error_rate) = TestProcedure(test_y, test_x, all_ximage_storing, all_disximage_storing, prior_prob, min_map_stats, bin_map_stats, toggle, pseudo_cnt_method, PSEUDO_CNST, len(test_x[0]), len(test_x[0][0]), method, d_gauss)
+    (posteriori_result, min_index_result, error_rate) = TestProcedure(test_y, test_x, all_ximage_storing, all_disximage_storing, prior_prob, min_map_stats, bin_map_stats, toggle, pseudo_cnt_method, PSEUDO_CNST, rows, cols, method, d_gauss)
 
     #Print the result
-    PrintResult(test_y, posteriori_result, min_index_result, error_rate, toggle, imagination_result, use_color, len(test_x[0]), len(test_x[0][0]))
+    PrintResult(test_y, posteriori_result, min_index_result, error_rate, toggle, imagination_result, use_color, rows, cols)
 
     #Print the debug messages when necessary
     if(is_debug):
@@ -338,7 +340,7 @@ def ReadImageFile(file_name, magic_test_num, is_debug):
 
     return x_data
 
-def StoreClassify(train_y, train_x, toggle, is_debug):
+def StoreClassify(train_y, train_x, toggle, is_debug, rows, cols):
     all_ximage_storing = {} #storing 0-9 all corresponding train_x image
     all_xindex_storing = {} #storing 0-9 all corresponding train_x image original index
     all_disximage_storing = {}#storing 0-9 all corresponding train_x image that value in each pixelis in range of [0, 32] instead of original [0, 255]
@@ -358,7 +360,7 @@ def StoreClassify(train_y, train_x, toggle, is_debug):
     if(toggle==0):
         for key, image_list in all_ximage_storing.items(): #key = 0-9 symbol, value = list of correspondent x_image
             for x_image in image_list:
-                all_disximage_storing[key].append(TallyFrequency32Bins(x_image))
+                all_disximage_storing[key].append(TallyFrequency32Bins(x_image, rows, cols))
 
 #    if(is_debug):
 #        i = 7
