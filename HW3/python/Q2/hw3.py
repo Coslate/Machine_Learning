@@ -146,8 +146,8 @@ def SequentialEstimation(EPSILON_m, EPSILON_s, m, s, gaussian_meth):
         else:
             last_unbiased_var = last_M2/(last_count-1)
 
-        print(f"Add data point: {new_data_point}")
-        print(f"Mean = {unbiased_mean} \t\t Variance = {unbiased_var}")
+        print(f"Add data point: {new_data_point:15.15f}")
+        print(f"Mean = {unbiased_mean:15.15f}\tVariance = {unbiased_var:15.15f}")
 
         if((abs(unbiased_mean-last_mean) < EPSILON_m) and (abs(unbiased_var-last_unbiased_var) < EPSILON_s)):
             break
