@@ -1,3 +1,3 @@
 #! /bin/csh -f
 
-./hw3.py -m 1 -s 5 -n 3 -w '[4, 2, 7]' -a 20 -isd 0
+./hw3.py -m 3.0 -s 5.0 -EPS_m 0.00001 -EPS_s 0.00001 > ./ans.log
