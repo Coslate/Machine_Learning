@@ -41,7 +41,7 @@ def main():
     uni_gauss_point = UnivariateGaussianRandomGenerator(m, s, gaussian_meth)
 
     #Generate a random data point from Polynomial Basis Linear Model Data Generator
-    poly_point = PolynomialBasisRandomGenerator(n, w, a)
+    poly_point = PolynomialBasisRandomGenerator(n, w, a, gaussian_meth)
 
     #Print the result
     PrintResult(uni_gauss_point, poly_point)
@@ -141,7 +141,7 @@ def UnivariateGaussianRandomGenerator(m, s, method=0):
 
     return data_point
 
-def PolynomialBasisRandomGenerator(n, w, a):
+def PolynomialBasisRandomGenerator(n, w, a, gaussian_meth):
     x = np.random.uniform(-1, 1)
     y = 0
     tmp_x = 1
@@ -152,7 +152,7 @@ def PolynomialBasisRandomGenerator(n, w, a):
             tmp_x *= x
             y += w[i]*tmp_x
 
-    y += UnivariateGaussianRandomGenerator(0, a)
+    y += UnivariateGaussianRandomGenerator(0, a, gaussian_meth)
     return (x, y)
 
 def PrintResult(uni_gauss_point, poly_point):
