@@ -157,7 +157,7 @@ def PolynomialBasisRandomGenerator(n, w, a):
 
 def PrintResult(uni_gauss_point, poly_point):
     print(f"Data point from Univariate Gaussian Data Generator : {uni_gauss_point}")
-    print(f"Data point from Polynomial Basis LInear Model Data Generator : ({poly_point[0]}, {poly_point[1]})")
+    print(f"Data point from Polynomial Basis Linear Model Data Generator : ({poly_point[0]}, {poly_point[1]})")
 
 def ConvertToList(w_string):
     return (list(map(float, w_string.strip('[]').split(','))))
