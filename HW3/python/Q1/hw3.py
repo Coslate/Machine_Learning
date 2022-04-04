@@ -152,7 +152,7 @@ def PolynomialBasisRandomGenerator(n, w, a):
             tmp_x *= x
             y += w[i]*tmp_x
 
-    #y += UnivariateGaussianRandomGenerator(0, a)
+    y += UnivariateGaussianRandomGenerator(0, a)
     return (x, y)
 
 def PrintResult(uni_gauss_point, poly_point):
