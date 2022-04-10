@@ -37,7 +37,7 @@ def main():
     #Process the argument
     (b, n, w, a, gaussian_meth, EPSILON, is_debug) = ArgumentParser()
 
-    PerformBayesianLinearRegression(n, w, a, b, gaussian_meth, EPSILON)
+    PerformBayesianLinearRegression(n, w, a, b, gaussian_meth, EPSILON, is_debug)
 
     if(is_debug):
         print(f'b = {b}')
@@ -114,11 +114,18 @@ def DrawGaussianDistribution(m, s, method):
     plt.show()
     '''
 
-def PerformBayesianLinearRegression(n, w, a, b, gaussian_meth, EPSILON):
-    all_data_points = []
+def PerformBayesianLinearRegression(n, w, a, b, gaussian_meth, EPSILON, is_debug):
+    all_data_points    = []
+    all_data_points_10 = []
+    all_data_points_50 = []
     count           = 0
+    precision_a     = 1.0/a
     prior_m         = MatrixTranspose([[0 for x in range(n)]]) #0 vector, nx1
     prior_S         = MatrixIdentityGen(n, b) #bI, nxn
+    posterior_m10   = []
+    posterior_m50   = []
+    posterior_V10   = []
+    posteriot_V50   = []
 
     while(True):
         #Generate a random data point from Polynomial Basis Linear Model Data Generator
@@ -129,11 +136,11 @@ def PerformBayesianLinearRegression(n, w, a, b, gaussian_meth, EPSILON):
         (design_matrix, Y) = FormMatrix([poly_point], n)
 
         #Calculate the Posterior
-        posterior_S = MatrixAdd(MatrixMulScalar(MatrixMul(MatrixTranspose(design_matrix), design_matrix), a), prior_S) # a*(design_matrix^T*design_matrix) + S
-        posterior_m = MatrixMul(MatrixInverse(posterior_S), MatrixAdd(MatrixMulScalar(MatrixMul(MatrixTranspose(design_matrix), Y), a), MatrixMul(prior_S, prior_m))) # posterior_S^-1 * (a*(design_matrix^T*Y) + S*m)
+        posterior_S = MatrixAdd(MatrixMulScalar(MatrixMul(MatrixTranspose(design_matrix), design_matrix), precision_a), prior_S) # precision_a*(design_matrix^T*design_matrix) + S
         posterior_V = MatrixInverse(posterior_S)
+        posterior_m = MatrixMul(posterior_V, MatrixAdd(MatrixMulScalar(MatrixMul(MatrixTranspose(design_matrix), Y), precision_a), MatrixMul(prior_S, prior_m))) # posterior_S^-1 * (precision_a*(design_matrix^T*Y) + S*m)
 
-        #Calculate error: ||posterior_m-prior_m||^2
+        #Calculate error: sqrt(||posterior_m-prior_m||^2)
         error_try   = ErrorVectorCalculation(MatrixSub(posterior_m, prior_m))
 
         print(f"Add data point ({poly_point[0]}, {poly_point[1]}) : ")
@@ -144,26 +151,37 @@ def PerformBayesianLinearRegression(n, w, a, b, gaussian_meth, EPSILON):
         print(f"")
 
         predict_m = MatrixMul(design_matrix, posterior_m) #design_matrix*posterior_m
-        predict_V = (1/a) + MatrixMul(MatrixMul(design_matrix, posterior_V), MatrixTranspose(design_matrix))[0][0] #1/a + design_matrix*posterior_V*design_matrix^T
+        predict_V = a + MatrixMul(MatrixMul(design_matrix, posterior_V), MatrixTranspose(design_matrix))[0][0] #a + design_matrix*posterior_V*design_matrix^T
         print(f"Predictive distribution ~ N({predict_m[0][0]}, {predict_V})")
         print(f"")
+        count  += 1
 
-        if(error_try < EPSILON):
-            Visualization(lse_parameter_x, newton_parameter_x, input_data, error_val_lse, error_val_newton, is_debug)
+        if(count == 10):
+            posterior_m10      = copy.deepcopy(posterior_m)
+            posterior_V10      = copy.deepcopy(posterior_V)
+            all_data_points_10 = copy.deepcopy(all_data_points)
+
+        if(count == 50):
+            posterior_m50      = copy.deepcopy(posterior_m)
+            posterior_V50      = copy.deepcopy(posterior_V)
+            all_data_points_50 = copy.deepcopy(all_data_points)
+
+        if(error_try < EPSILON and count > 50):
+            Visualization(n, a, w, all_data_points, all_data_points_10, all_data_points_50, posterior_m, posterior_m10, posterior_m50, posterior_V, posterior_V10, posterior_V50, is_debug)
             break
 
         #Prior Update
         prior_m = copy.deepcopy(posterior_m)
         prior_S = copy.deepcopy(posterior_S)
 
-def Visualization(a, w, all_data_points, predict_m, predict_V, is_debug):
+def Visualization(n, a, w, all_data_points, all_data_points_10, all_data_points_50, posterior_m, posterior_m10, posterior_m50, posterior_V, posterior_V10, posterior_V50, is_debug):
     #creat the subplot object
-    fig=plt.subplots(1,2)
+    fig=plt.subplots(2,2, figsize=(15, 10))
 
     #======================Ground truth========================#
-    plt.subplot(2, 1, 1)
+    plt.subplot(2, 2, 1)
     plt.xlim(-2, 2)
-    plt.ylim(-25, 25)
+    plt.ylim(-18, 25)
 
     #setting the scale for separating x, y
     x_major_locator=MultipleLocator(1)
@@ -172,54 +190,119 @@ def Visualization(a, w, all_data_points, predict_m, predict_V, is_debug):
     ax.xaxis.set_major_locator(x_major_locator)
     ax.yaxis.set_major_locator(y_major_locator)
 
-    #plot the input_data points in red
-    x = [rows[0] for rows in input_data]
-    y = [rows[1] for rows in input_data]
     plt.title("Ground truth")
-    plt.scatter(x, y, c='blue', s=15, zorder=3)
-
     #plot the fitting line
-    fitted = np.poly1d(w.reverse())
+    fitted = np.poly1d(w[::-1])
     xaxis_range = np.arange(-2, 2, 0.01)
     yaxis_range = fitted(xaxis_range)
     plt.plot(xaxis_range, yaxis_range, color='black')
+    plt.plot(xaxis_range, yaxis_range+a, color='red')
+    plt.plot(xaxis_range, yaxis_range-a, color='red')
     if(is_debug):
-        print(f"LSE, xaxis_range = {xaxis_range}")
-        print(f"LSE, yaxis_range = {yaxis_range}")
+        print(f"xaxis_range = {xaxis_range}")
+        print(f"yaxis_range = {yaxis_range}")
+        print(f"yaxis_range+a = {yaxis_range+a}")
+        print(f"yaxis_range-a = {yaxis_range-a}")
         print(f"================================")
 
     #======================Predict result========================#
-    '''
-    plt.subplot(2, 1, 2)
-    plt.xlim(-6, 6)
-    plt.ylim(-20, 110)
+    plt.subplot(2, 2, 2)
+    plt.xlim(-2, 2)
+    plt.ylim(-18, 25)
 
     #setting the scale for separating x, y
-    x_major_locator=MultipleLocator(2)
-    y_major_locator=MultipleLocator(20)
+    x_major_locator=MultipleLocator(1)
+    y_major_locator=MultipleLocator(10)
     ax=plt.gca()
     ax.xaxis.set_major_locator(x_major_locator)
     ax.yaxis.set_major_locator(y_major_locator)
 
-    #plot the input_data points in red
-    x = [rows[0] for rows in input_data]
-    y = [rows[1] for rows in input_data]
-    plt.title("Newton Method")
-    plt.scatter(x, y, c='red', s=15, zorder=3)
+    #plot the all_data_points in red
+    x = [rows[0] for rows in all_data_points]
+    y = [rows[1] for rows in all_data_points]
+    plt.title("Predict result")
+    plt.scatter(x, y, c='blue', s=15)
 
     #plot the fitting line
-    fitted = np.poly1d([rows[0] for rows in newton_parameter_x])
-    xaxis_range = np.arange(-7, 7, 0.01)
+    w_posterior_m = MatrixTranspose(posterior_m)[0]
+    fitted = np.poly1d(w_posterior_m[::-1])
+    xaxis_range = np.arange(-2, 2, 0.01)
     yaxis_range = fitted(xaxis_range)
-    plt.plot(xaxis_range, yaxis_range)
-    if(is_debug):
-        print(f"Newton, xaxis_range = {xaxis_range}")
-        print(f"Newton, yaxis_range = {yaxis_range}")
-        print(f"================================")
+    var         = []
+    for i, x in enumerate(xaxis_range):
+        (design_matrix, Y) = FormMatrix([(x, yaxis_range[i])], n)
+        var.append(a + MatrixMul(MatrixMul(design_matrix, posterior_V), MatrixTranspose(design_matrix))[0][0])
+
+    plt.plot(xaxis_range, yaxis_range, color='black')
+    plt.plot(xaxis_range, yaxis_range+var, color='red')
+    plt.plot(xaxis_range, yaxis_range-var, color='red')
+
+    #======================After 10 incomes========================#
+    plt.subplot(2, 2, 3)
+    plt.xlim(-2, 2)
+    plt.ylim(-18, 25)
+
+    #setting the scale for separating x, y
+    x_major_locator=MultipleLocator(1)
+    y_major_locator=MultipleLocator(10)
+    ax=plt.gca()
+    ax.xaxis.set_major_locator(x_major_locator)
+    ax.yaxis.set_major_locator(y_major_locator)
+
+    #plot the all_data_points in red
+    x = [rows[0] for rows in all_data_points_10]
+    y = [rows[1] for rows in all_data_points_10]
+    plt.title("After 10 incomes")
+    plt.scatter(x, y, c='blue', s=15)
+
+    #plot the fitting line
+    w_posterior_m10 = MatrixTranspose(posterior_m10)[0]
+    fitted = np.poly1d(w_posterior_m10[::-1])
+    xaxis_range = np.arange(-2, 2, 0.01)
+    yaxis_range = fitted(xaxis_range)
+    var         = []
+    for i, x in enumerate(xaxis_range):
+        (design_matrix, Y) = FormMatrix([(x, yaxis_range[i])], n)
+        var.append(a + MatrixMul(MatrixMul(design_matrix, posterior_V10), MatrixTranspose(design_matrix))[0][0])
+
+    plt.plot(xaxis_range, yaxis_range, color='black')
+    plt.plot(xaxis_range, yaxis_range+var, color='red')
+    plt.plot(xaxis_range, yaxis_range-var, color='red')
+
+    #======================After 50 incomes========================#
+    plt.subplot(2, 2, 4)
+    plt.xlim(-2, 2)
+    plt.ylim(-18, 25)
+
+    #setting the scale for separating x, y
+    x_major_locator=MultipleLocator(1)
+    y_major_locator=MultipleLocator(10)
+    ax=plt.gca()
+    ax.xaxis.set_major_locator(x_major_locator)
+    ax.yaxis.set_major_locator(y_major_locator)
+
+    #plot the all_data_points in red
+    x = [rows[0] for rows in all_data_points_50]
+    y = [rows[1] for rows in all_data_points_50]
+    plt.title("After 50 incomes")
+    plt.scatter(x, y, c='blue', s=15)
+
+    #plot the fitting line
+    w_posterior_m50 = MatrixTranspose(posterior_m50)[0]
+    fitted = np.poly1d(w_posterior_m50[::-1])
+    xaxis_range = np.arange(-2, 2, 0.01)
+    yaxis_range = fitted(xaxis_range)
+    var         = []
+    for i, x in enumerate(xaxis_range):
+        (design_matrix, Y) = FormMatrix([(x, yaxis_range[i])], n)
+        var.append(a + MatrixMul(MatrixMul(design_matrix, posterior_V50), MatrixTranspose(design_matrix))[0][0])
+
+    plt.plot(xaxis_range, yaxis_range, color='black')
+    plt.plot(xaxis_range, yaxis_range+var, color='red')
+    plt.plot(xaxis_range, yaxis_range-var, color='red')
 
     #show the plot
     plt.show()
-    '''
 
 
 def ErrorVectorCalculation(vector_x):
