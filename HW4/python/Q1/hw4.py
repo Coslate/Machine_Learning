@@ -388,8 +388,9 @@ def Visualization(ground_truth_d1, ground_truth_d2, grad_d1, grad_d2, newt_d1, n
 def PerformLogisticRegression(N, mx1, vx1, my1, vy1, mx2, vx2, my2, vy2, gaussian_meth, EPSILON_GRAD, EPSILON_NEWT, learning_rate, use_my_inverse, termin_cnt_grad, termin_cnt_newt, is_debug):
     #Form the design_matrix, and Y
     (design_matrix, Y, ground_truth_d1, ground_truth_d2) = FormDesignMatrix(N, mx1, vx1, my1, vy1, mx2, vx2, my2, vy2, gaussian_meth)
-    #
+    #GradientDescent
     w_grad = GradientDescent(design_matrix, Y, EPSILON_GRAD, learning_rate, termin_cnt_grad, is_debug)
+    #NewtonMethod
     w_newt = NewtonMethod(design_matrix, Y, EPSILON_NEWT, learning_rate, use_my_inverse, termin_cnt_newt, is_debug)
 
     return (design_matrix, Y, ground_truth_d1, ground_truth_d2, w_grad, w_newt)
