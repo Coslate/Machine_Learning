@@ -77,6 +77,7 @@ def main():
                 for j in range(28):
                     print(f"i = {i}, j = {j}, bin_map[{i}][{j}] = {bin_map[i][j]}")
             print(f"---------------------------------------")
+        print(f"total training images number = {len(train_x)}")
 
         i = 0
         print(f"train_y[{i}] = {train_y[i]}")
