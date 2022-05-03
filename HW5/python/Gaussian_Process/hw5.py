@@ -12,6 +12,8 @@ import copy
 import numpy as np
 import gzip
 import matplotlib.pyplot as plt
+from scipy.spatial import distance
+from scipy.optimize import minimize
 from matplotlib.pyplot import MultipleLocator #for setting of scale of separating along with x-axis & y-axis.
 
 #########################
@@ -36,11 +38,15 @@ class color:
 def main():
     #Process the argument
     print(f"> ArgumentParser...")
-    (input_file, is_debug) = ArgumentParser()
+    (input_file, alpha, length_scale, beta, test_num, opt_hyper, is_debug) = ArgumentParser()
 
     #Get the input data point
+    print(f"> ReadInputfile...")
     input_data = ReadInputFile(input_file)
 
+    #Perform Gaussian Process
+    print(f"> GaussianProcess...")
+    GaussianProcess(input_data, alpha, length_scale, beta, test_num, opt_hyper)
 
     if(is_debug):
         for index, w in enumerate(input_data):
@@ -51,19 +57,38 @@ def main():
 #########################
 def ArgumentParser():
     input_file          = None
+    alpha               = 1
+    length_scale        = 1
+    beta                = 5
+    test_num            = 500
+    opt_hyper           = 0
     is_debug            = 0
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_file", "-inf", help="The input file name of the input data points.")
-    parser.add_argument("--is_debug", "-isd", help="1 for debug mode; 0 for normal mode.")
+    parser.add_argument("--input_file",   "-inf",     help="The input file name of the input data points.")
+    parser.add_argument("--alpha",        "-alpha",   help="The input aplha, mixture parameter for rational quadratic kernel.")
+    parser.add_argument("--length_scale", "-ls",      help="The input length scale of rational quadratic kernel.")
+    parser.add_argument("--beta",        "-beta",     help="The input beta, the variance of the noise Gaussian model.")
+    parser.add_argument("--test_num",    "-test_num", help="The number of test data point in the range of [-60, 60]. Default 500.")
+    parser.add_argument("--opt_hyper",   "-opt_hyper",help="Whether to optimize the hyper parameter, alpha and length_scale, for rational quadratic kernel. Default 0.")
+    parser.add_argument("--is_debug",    "-isd",      help="1 for debug mode; 0 for normal mode.")
 
     args = parser.parse_args()
 
     if(args.input_file):
-        input_file = args.input_file
-
+        input_file   = args.input_file
+    if(args.alpha):
+        alpha        = float(args.alpha)
+    if(args.length_scale):
+        length_scale = float(args.length_scale)
+    if(args.beta):
+        beta         = float(args.beta)
+    if(args.test_num):
+        test_num     = int(args.test_num)
+    if(args.opt_hyper):
+        opt_hyper    = int(args.opt_hyper)
     if(args.is_debug):
-        is_debug   = int(args.is_debug)
+        is_debug     = int(args.is_debug)
 
     if(input_file == None):
         print(f"Error: You should set '--N' or '-N' for the number of data points.")
@@ -71,9 +96,14 @@ def ArgumentParser():
 
     if(is_debug):
         print(f"input_file   = {input_file}")
+        print(f"alpha        = {alpha}")
+        print(f"length_scale = {length_scale}")
+        print(f"beta         = {beta}")
+        print(f"test_num     = {test_num}")
+        print(f"opt_hyper    = {opt_hyper}")
         print(f"is_debug     = {is_debug}")
 
-    return(input_file, is_debug)
+    return (input_file, alpha, length_scale, beta, test_num, opt_hyper, is_debug)
 
 def ReadInputFile(input_file):
     file_data  = open(input_file, 'r')
@@ -90,84 +120,96 @@ def ReadInputFile(input_file):
 
     return input_data
 
+def RationalQuadraticKernelMatrix(xi_m, xj_m, alpha, length_scale, beta, add_beta=0): #xi_m: nx1 matrix, xj_m: nx1 matrix
+    row = xi_m.shape[0]
+    col = xj_m.shape[0]
+    kernel_mat = []
 
-def DrawGaussianDistribution(m, s, method):
-    xaxis_range = np.arange(-10000, 10000, 1)
-    yaxis_range = [UnivariateGaussianRandomGenerator(m, s, method) for x in xaxis_range]
-    plt.hist(yaxis_range, 100)
-    plt.title(f"Gaussian distribution using method {method}")
-    plt.show()
+    dist_matrix = distance.cdist(xi_m, xj_m, 'euclidean')
 
-def Visualization(ground_truth_d1, ground_truth_d2, grad_d1, grad_d2, newt_d1, newt_d2):
+    for i in range(row):
+        row_arr = []
+        for j in range(col):
+            kernel_val = math.pow(1 + (math.pow(dist_matrix[i][j], 2)/(2*alpha*math.pow(length_scale, 2))), -1*alpha)
+            if((i==j) and (add_beta==1)):
+                kernel_val += 1/beta
+
+            row_arr.append(kernel_val)
+        kernel_mat.append(row_arr)
+
+    return np.array(kernel_mat)
+
+def NegMarginalLogLikeliHood(hyper_param, x_data, y_data, beta):
+    N = x_data.shape[0]
+    c_train_mat = RationalQuadraticKernelMatrix(x_data, x_data, hyper_param[0], hyper_param[1], beta, 1)
+    result = 0.5*np.log(np.linalg.det(c_train_mat)) + 0.5*((y_data.T@np.linalg.inv(c_train_mat))@y_data) + 0.5*N*np.log(2*np.pi)
+
+    return result
+
+def GaussianProcess(input_data, alpha, length_scale, beta, test_num, opt_hyper):
+    x_data = np.array([[x[0] for x in input_data]]).T
+    y_data = np.array([[x[1] for x in input_data]]).T
+
+    if(opt_hyper == 1):
+        initial_hyper_param = np.array([alpha, length_scale])
+        hyper_param_opt = minimize(NegMarginalLogLikeliHood, initial_hyper_param, args = (x_data, y_data, beta))
+        alpha           = hyper_param_opt.x[0]
+        length_scale    = hyper_param_opt.x[1]
+
+    #Calculate the C(nxn) = k(x, x) + 1/beta(i==j)
+    c_train_mat = RationalQuadraticKernelMatrix(x_data, x_data, alpha, length_scale, beta, 1)
+    c_train_inv_mat = np.linalg.inv(c_train_mat)
+
+    #Calculate k(x, x*), nxm
+    x_test = np.array([np.linspace(-60, 60, test_num)]).T #mx1
+    k_train_test = RationalQuadraticKernelMatrix(x_data, x_test, alpha, length_scale, beta, 0)
+
+    #Calculate k_star = k* = k(x*, x*) + 1/beta(i==j), mxm
+    k_star = RationalQuadraticKernelMatrix(x_test, x_test, alpha, length_scale, beta, 1)
+
+    #Calculate mean and variance
+    mean = (k_train_test.T)@(c_train_inv_mat@y_data) #mx1
+    var  = k_star - (k_train_test.T)@(c_train_inv_mat@k_train_test) #mxm
+
+    #Visualization
+    Visualization(x_data, y_data, x_test, mean, var, alpha, length_scale, beta, test_num)
+
+def PrintMatrix(input_matrix, matrix_name):
+    print(f'{len(input_matrix)}x{len(input_matrix[0])}, {matrix_name}: ')
+#    print(f'[', end = '')
+    for index_i, rows in enumerate(input_matrix):
+        for index_j, cols in enumerate(rows):
+            if(index_i == (len(input_matrix)-1) and index_j == (len(rows)-1)):
+                print(f'{input_matrix[index_i][index_j]:20.10f}') #will print the same
+                #print(f'[{cols}] ') #will print the same
+            elif(index_j == (len(rows)-1)):
+                print(f'{input_matrix[index_i][index_j]:20.10f}') #will print the same
+            else:
+                if(index_j == 0 and index_i != 0):
+                    print(f'{input_matrix[index_i][index_j]:20.10f}', end='') #will print the same
+                else:
+                    print(f'{input_matrix[index_i][index_j]:20.10f}', end='') #will print the same
+
+def Visualization(x_data, y_data, x_test, mean, var, alpha, length_scale, beta, test_num):
     #creat the subplot object
-    fig=plt.subplots(1,3)
+    fig=plt.subplots(1,1, figsize=(12, 8))
 
     #======================Ground truth========================#
-    plt.subplot(1, 3, 1)
-    #plt.xlim(-5, 15)
-    #plt.ylim(-3, 15)
+    plt.subplot(1, 1, 1)
+    plt.xlim(-60, 60)
 
-    #setting the scale for separating x, y
-    #x_major_locator=MultipleLocator(10)
-    #y_major_locator=MultipleLocator(2)
-    #ax=plt.gca()
-    #ax.xaxis.set_major_locator(x_major_locator)
-    #ax.yaxis.set_major_locator(y_major_locator)
+    #plot the original data point
+    plt.title(f"Gaussian Process with alpha = {alpha}, length_scale = {length_scale}, beta = {beta}, test_num = {test_num}")
+    plt.scatter(x_data, y_data, c='m')
 
-    plt.title("Ground truth")
-    ground_truth_d1x = [x[0] for x in ground_truth_d1]
-    ground_truth_d1y = [x[1] for x in ground_truth_d1]
-    ground_truth_d2x = [x[0] for x in ground_truth_d2]
-    ground_truth_d2y = [x[1] for x in ground_truth_d2]
-    if((len(ground_truth_d1x) !=0) and (len(ground_truth_d1y) !=0)):
-        plt.scatter(ground_truth_d1x, ground_truth_d1y, c='red')
-    if((len(ground_truth_d2x) !=0) and (len(ground_truth_d2y) !=0)):
-        plt.scatter(ground_truth_d2x, ground_truth_d2y, c='blue')
+    #plot the predicton result
+    plt.plot(x_test.T[0], mean.T[0], c='blue')
 
-
-    #======================Gradient Descent predict result========================#
-    plt.subplot(1, 3, 2)
-    #plt.xlim(-5, 15)
-    #plt.ylim(-3, 15)
-
-    #setting the scale for separating x, y
-    #x_major_locator=MultipleLocator(10)
-    #y_major_locator=MultipleLocator(2)
-    #ax=plt.gca()
-    #ax.xaxis.set_major_locator(x_major_locator)
-    #ax.yaxis.set_major_locator(y_major_locator)
-
-    plt.title("Gradient descent")
-    grad_d1x = [x[0] for x in grad_d1]
-    grad_d1y = [x[1] for x in grad_d1]
-    grad_d2x = [x[0] for x in grad_d2]
-    grad_d2y = [x[1] for x in grad_d2]
-    if((len(grad_d1x) !=0) and (len(grad_d1y) !=0)):
-        plt.scatter(grad_d1x, grad_d1y, c='red')
-    if((len(grad_d2x) !=0) and (len(grad_d2y) !=0)):
-        plt.scatter(grad_d2x, grad_d2y, c='blue')
-
-    #======================Newton's Method predict result========================#
-    plt.subplot(1, 3, 3)
-    #plt.xlim(-5, 15)
-    #plt.ylim(-3, 15)
-
-    #setting the scale for separating x, y
-    #x_major_locator=MultipleLocator(10)
-    #y_major_locator=MultipleLocator(2)
-    #ax=plt.gca()
-    #ax.xaxis.set_major_locator(x_major_locator)
-    #ax.yaxis.set_major_locator(y_major_locator)
-
-    plt.title("Newton's method")
-    newt_d1x = [x[0] for x in newt_d1]
-    newt_d1y = [x[1] for x in newt_d1]
-    newt_d2x = [x[0] for x in newt_d2]
-    newt_d2y = [x[1] for x in newt_d2]
-    if((len(newt_d1x) !=0) and (len(newt_d1y) !=0)):
-        plt.scatter(newt_d1x, newt_d1y, c='red')
-    if((len(newt_d2x) !=0) and (len(newt_d2y) !=0)):
-        plt.scatter(newt_d2x, newt_d2y, c='blue')
+    #95% confidence interval
+    var_x = np.diag(var)
+    high = np.array([x + 1.96*math.sqrt(var_x[index]) for index, x in enumerate(mean.T[0])])
+    low  = np.array([x - 1.96*math.sqrt(var_x[index]) for index, x in enumerate(mean.T[0])])
+    plt.fill_between(x_test.T[0], high, low, color='red', alpha=0.2)
 
     #show the plot
     plt.tight_layout()
