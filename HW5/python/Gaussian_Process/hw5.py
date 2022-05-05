@@ -38,7 +38,7 @@ class color:
 def main():
     #Process the argument
     print(f"> ArgumentParser...")
-    (input_file, alpha, length_scale, beta, test_num, opt_hyper, is_debug) = ArgumentParser()
+    (input_file, alpha, length_scale, sigma, use_sigma, beta, test_num, opt_hyper, is_debug) = ArgumentParser()
 
     #Get the input data point
     print(f"> ReadInputfile...")
@@ -46,7 +46,7 @@ def main():
 
     #Perform Gaussian Process
     print(f"> GaussianProcess...")
-    GaussianProcess(input_data, alpha, length_scale, beta, test_num, opt_hyper)
+    GaussianProcess(input_data, alpha, length_scale, sigma, use_sigma, beta, test_num, opt_hyper)
 
     if(is_debug):
         for index, w in enumerate(input_data):
@@ -62,6 +62,8 @@ def ArgumentParser():
     beta                = 5
     test_num            = 500
     opt_hyper           = 0
+    sigma               = 1
+    use_sigma           = 0
     is_debug            = 0
 
     parser = argparse.ArgumentParser()
@@ -71,6 +73,8 @@ def ArgumentParser():
     parser.add_argument("--beta",        "-beta",     help="The input beta, the variance of the noise Gaussian model.")
     parser.add_argument("--test_num",    "-test_num", help="The number of test data point in the range of [-60, 60]. Default 500.")
     parser.add_argument("--opt_hyper",   "-opt_hyper",help="Whether to optimize the hyper parameter, alpha and length_scale, for rational quadratic kernel. Default 0.")
+    parser.add_argument("--sigma",       "-sigma",    help="The sigma value of rational quadratic kernel. Default 1.")
+    parser.add_argument("--use_sigma",   "-use_sigma",help="1 for using sigam in calculating rational quadratic kernel. 0 for not using sigma incalculating rational quadratic kernel. Default 0.")
     parser.add_argument("--is_debug",    "-isd",      help="1 for debug mode; 0 for normal mode.")
 
     args = parser.parse_args()
@@ -87,6 +91,10 @@ def ArgumentParser():
         test_num     = int(args.test_num)
     if(args.opt_hyper):
         opt_hyper    = int(args.opt_hyper)
+    if(args.sigma):
+        sigma        = float(args.sigma)
+    if(args.use_sigma):
+        use_sigma    = int(args.use_sigma)
     if(args.is_debug):
         is_debug     = int(args.is_debug)
 
@@ -101,9 +109,11 @@ def ArgumentParser():
         print(f"beta         = {beta}")
         print(f"test_num     = {test_num}")
         print(f"opt_hyper    = {opt_hyper}")
+        print(f"sigma        = {sigma}")
+        print(f"use_sigma    = {use_sigma}")
         print(f"is_debug     = {is_debug}")
 
-    return (input_file, alpha, length_scale, beta, test_num, opt_hyper, is_debug)
+    return (input_file, alpha, length_scale, sigma, use_sigma, beta, test_num, opt_hyper, is_debug)
 
 def ReadInputFile(input_file):
     file_data  = open(input_file, 'r')
@@ -120,7 +130,7 @@ def ReadInputFile(input_file):
 
     return input_data
 
-def RationalQuadraticKernelMatrix(xi_m, xj_m, alpha, length_scale, beta, add_beta=0): #xi_m: nx1 matrix, xj_m: nx1 matrix
+def RationalQuadraticKernelMatrix(xi_m, xj_m, alpha, length_scale, use_sigma, beta, sigma=1, add_beta=0): #xi_m: nx1 matrix, xj_m: nx1 matrix
     row = xi_m.shape[0]
     col = xj_m.shape[0]
     kernel_mat = []
@@ -130,7 +140,10 @@ def RationalQuadraticKernelMatrix(xi_m, xj_m, alpha, length_scale, beta, add_bet
     for i in range(row):
         row_arr = []
         for j in range(col):
-            kernel_val = math.pow(1 + (math.pow(dist_matrix[i][j], 2)/(2*alpha*math.pow(length_scale, 2))), -1*alpha)
+            if(use_sigma):
+                kernel_val = math.pow(sigma, 2)*math.pow(1 + (math.pow(dist_matrix[i][j], 2)/(2*alpha*math.pow(length_scale, 2))), -1*alpha)
+            else:
+                kernel_val = math.pow(1 + (math.pow(dist_matrix[i][j], 2)/(2*alpha*math.pow(length_scale, 2))), -1*alpha)
             if((i==j) and (add_beta==1)):
                 kernel_val += 1/beta
 
@@ -139,40 +152,54 @@ def RationalQuadraticKernelMatrix(xi_m, xj_m, alpha, length_scale, beta, add_bet
 
     return np.array(kernel_mat)
 
-def NegMarginalLogLikeliHood(hyper_param, x_data, y_data, beta):
+def NegMarginalLogLikeliHoodUseSigma(hyper_param, x_data, y_data, use_sigma, beta):
     N = x_data.shape[0]
-    c_train_mat = RationalQuadraticKernelMatrix(x_data, x_data, hyper_param[0], hyper_param[1], beta, 1)
+    c_train_mat = RationalQuadraticKernelMatrix(x_data, x_data, hyper_param[0], hyper_param[1], use_sigma, beta, hyper_param[2], 1)
     result = 0.5*np.log(np.linalg.det(c_train_mat)) + 0.5*((y_data.T@np.linalg.inv(c_train_mat))@y_data) + 0.5*N*np.log(2*np.pi)
 
     return result
 
-def GaussianProcess(input_data, alpha, length_scale, beta, test_num, opt_hyper):
+def NegMarginalLogLikeliHood(hyper_param, x_data, y_data, beta):
+    N = x_data.shape[0]
+    c_train_mat = RationalQuadraticKernelMatrix(x_data, x_data, hyper_param[0], hyper_param[1], 0, beta, 1, 1)
+    result = 0.5*np.log(np.linalg.det(c_train_mat)) + 0.5*((y_data.T@np.linalg.inv(c_train_mat))@y_data) + 0.5*N*np.log(2*np.pi)
+
+    return result
+
+def GaussianProcess(input_data, alpha, length_scale, sigma, use_sigma, beta, test_num, opt_hyper):
     x_data = np.array([[x[0] for x in input_data]]).T
     y_data = np.array([[x[1] for x in input_data]]).T
 
     if(opt_hyper == 1):
-        initial_hyper_param = np.array([alpha, length_scale])
-        hyper_param_opt = minimize(NegMarginalLogLikeliHood, initial_hyper_param, args = (x_data, y_data, beta))
-        alpha           = hyper_param_opt.x[0]
-        length_scale    = hyper_param_opt.x[1]
+        if(use_sigma):
+            initial_hyper_param = np.array([alpha, length_scale, sigma])
+            hyper_param_opt = minimize(NegMarginalLogLikeliHoodUseSigma, initial_hyper_param, args = (x_data, y_data, use_sigma, beta))
+            alpha           = hyper_param_opt.x[0]
+            length_scale    = hyper_param_opt.x[1]
+            sigma           = hyper_param_opt.x[2]
+        else:
+            initial_hyper_param = np.array([alpha, length_scale])
+            hyper_param_opt = minimize(NegMarginalLogLikeliHood, initial_hyper_param, args = (x_data, y_data, beta))
+            alpha           = hyper_param_opt.x[0]
+            length_scale    = hyper_param_opt.x[1]
 
     #Calculate the C(nxn) = k(x, x) + 1/beta(i==j)
-    c_train_mat = RationalQuadraticKernelMatrix(x_data, x_data, alpha, length_scale, beta, 1)
+    c_train_mat = RationalQuadraticKernelMatrix(x_data, x_data, alpha, length_scale, use_sigma, beta, sigma, 1)
     c_train_inv_mat = np.linalg.inv(c_train_mat)
 
     #Calculate k(x, x*), nxm
     x_test = np.array([np.linspace(-60, 60, test_num)]).T #mx1
-    k_train_test = RationalQuadraticKernelMatrix(x_data, x_test, alpha, length_scale, beta, 0)
+    k_train_test = RationalQuadraticKernelMatrix(x_data, x_test, alpha, length_scale, use_sigma, beta, sigma, 0)
 
     #Calculate k_star = k* = k(x*, x*) + 1/beta(i==j), mxm
-    k_star = RationalQuadraticKernelMatrix(x_test, x_test, alpha, length_scale, beta, 1)
+    k_star = RationalQuadraticKernelMatrix(x_test, x_test, alpha, length_scale, use_sigma, beta, sigma, 1)
 
     #Calculate mean and variance
     mean = (k_train_test.T)@(c_train_inv_mat@y_data) #mx1
     var  = k_star - (k_train_test.T)@(c_train_inv_mat@k_train_test) #mxm
 
     #Visualization
-    Visualization(x_data, y_data, x_test, mean, var, alpha, length_scale, beta, test_num)
+    Visualization(x_data, y_data, x_test, mean, var, alpha, length_scale, beta, sigma, use_sigma, test_num)
 
 def PrintMatrix(input_matrix, matrix_name):
     print(f'{len(input_matrix)}x{len(input_matrix[0])}, {matrix_name}: ')
@@ -190,16 +217,19 @@ def PrintMatrix(input_matrix, matrix_name):
                 else:
                     print(f'{input_matrix[index_i][index_j]:20.10f}', end='') #will print the same
 
-def Visualization(x_data, y_data, x_test, mean, var, alpha, length_scale, beta, test_num):
+def Visualization(x_data, y_data, x_test, mean, var, alpha, length_scale, beta, sigma, use_sigma, test_num):
     #creat the subplot object
-    fig=plt.subplots(1,1, figsize=(12, 8))
+    fig=plt.subplots(1,1, figsize=(15, 8))
 
     #======================Ground truth========================#
     plt.subplot(1, 1, 1)
     plt.xlim(-60, 60)
 
     #plot the original data point
-    plt.title(f"Gaussian Process with alpha = {alpha}, length_scale = {length_scale}, beta = {beta}, test_num = {test_num}")
+    if(use_sigma):
+        plt.title(f"Gaussian Process with sigma = {sigma}, alpha = {alpha}, length_scale = {length_scale}, beta = {beta}, test_num = {test_num}")
+    else:
+        plt.title(f"Gaussian Process with alpha = {alpha}, length_scale = {length_scale}, beta = {beta}, test_num = {test_num}")
     plt.scatter(x_data, y_data, c='m')
 
     #plot the predicton result
