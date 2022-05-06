@@ -99,7 +99,7 @@ def ArgumentParser():
         is_debug     = int(args.is_debug)
 
     if(input_file == None):
-        print(f"Error: You should set '--N' or '-N' for the number of data points.")
+        print(f"Error: You should set '--iput_file' or '-inf' for the input file name of trainin data.")
         sys.exit()
 
     if(is_debug):
