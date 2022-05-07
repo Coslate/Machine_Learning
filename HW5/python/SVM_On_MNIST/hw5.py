@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 from csv import reader
+from libsvm.svmutil import *
 from matplotlib.pyplot import MultipleLocator #for setting of scale of separating along with x-axis & y-axis.
 
 #########################
@@ -41,13 +42,21 @@ def main():
 
     #Get the input training/test data points
     #print(f"> ReadInputfile...")
-    input_train_x = ReadInputFile(input_train_x)
-    input_train_y = ReadInputFile(input_train_y)
-    input_test_x  = ReadInputFile(input_test_x)
-    input_test_y  = ReadInputFile(input_test_y)
+    train_x = ReadInputFile(input_train_x)
+    train_y = ReadInputFile(input_train_y)
+    test_x  = ReadInputFile(input_test_x)
+    test_y  = ReadInputFile(input_test_y)
+
+    #Perform Task 1 - Use different kernel function(linear, polynomial and RBF) to compare the performance. 
+    SVMModelComparison(train_x, train_y, test_x, test_y)
 
     if(is_debug):
         '''
+        print(f"train_x.shape = {train_x.shape}")
+        print(f"train_y.shape = {train_y.shape}")
+        print(f"test_x.shape = {test_x.shape}")
+        print(f"test_y.shape = {test_y.shape}")
+
         for images in input_train_y:
             for index, pixel in enumerate(images):
                 print(f"{int(pixel)}")
@@ -150,6 +159,39 @@ def ReadInputFile(input_file):
             input_data.append(row_data)
 
     return np.array(input_data)
+
+def SVMModelComparison(train_x, train_y, test_x, test_y):
+    train_y = train_y.ravel()
+    test_y  = test_y.ravel()
+
+    kernel_type = {0:"Linear Kernel", 1:"Polynomial Kernel", 2:"RBF Kernel"}
+    kernel_parameter = {0:"None", 1:["gamma", "coef0", "degree"], 2:["gamma"]}
+
+    prob = svm_problem(train_y, train_x)
+    for kernel_index in range(3):
+        if(kernel_index==0):
+            print(f"------------")
+
+        #setting the input and the parameters
+        param = svm_parameter('-t '+str(kernel_index)+' -q')
+
+        ## training  the model
+        model = svm_train(prob, param)
+
+        #testing the model
+        print(f"{kernel_type[kernel_index]}: ")
+        if(kernel_parameter[kernel_index] != 'None'):
+            for parameter_name in kernel_parameter[kernel_index]:
+                if(parameter_name == "gamma"):
+                    print(f"parameter gamma = {param.gamma}")
+                elif(parameter_name == "coef0"):
+                    print(f"parameter coef0 = {param.coef0}")
+                elif(parameter_name == "degree"):
+                    print(f"parameter degree = {param.degree}")
+
+        print(f"")
+        svm_predict(test_y, test_x, model)
+        print(f"------------")
 
 def PrintMatrix(input_matrix, matrix_name):
     print(f'{len(input_matrix)}x{len(input_matrix[0])}, {matrix_name}: ')
