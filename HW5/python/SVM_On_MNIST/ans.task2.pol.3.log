@@ -1,0 +1,19 @@
+<------------ Grid Search & Test for Kernel: Polynomial------------>
+svm_type = 0, kernel_type = 1, kfold = 5
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 256, best degree = 0, accuracy = 20.0%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 256, best degree = 1, accuracy = 79.36%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 256, best degree = 3, accuracy = 96.92%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 5, best degree = 7, accuracy = 97.46000000000001%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 5, best degree = 9, accuracy = 97.74000000000001%
+Currently best C = 0.0001220703125, best gamma = 0.1, best coef0 = 5, best degree = 5, accuracy = 97.82%
+Currently best C = 0.0001220703125, best gamma = 1, best coef0 = 256, best degree = 5, accuracy = 97.94%
+Currently best C = 0.0001220703125, best gamma = 1, best coef0 = 256, best degree = 11, accuracy = 98.08%
+Currently best C = 0.01, best gamma = 0.1, best coef0 = 5, best degree = 5, accuracy = 98.2%
+Currently best C = 1, best gamma = 10, best coef0 = 256, best degree = 3, accuracy = 98.22%
+> --------------------------------------------------------------
+> Done for grid search: 
+Best hyper parameter C = 1, gamma = 10, coef0 = 256, degree = 3, with highest accuracy = 98.22%
+> --------------------------------------------------------------
+> Testing with test datasets: 
+Accuracy = 97.92% (2448/2500) (classification)
+<------------------------ END ------------------------------>

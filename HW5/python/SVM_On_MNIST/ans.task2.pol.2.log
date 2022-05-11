@@ -1,0 +1,119 @@
+<------------ Grid Search & Test for Kernel: Polynomial------------>
+svm_type = 0, kernel_type = 1, kfold = 5
+Cross Validation Accuracy = 79.52%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 256, best degree = 1, accuracy = 79.52%
+Cross Validation Accuracy = 93.02%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 256, best degree = 2, accuracy = 93.02%
+Cross Validation Accuracy = 96.92%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 256, best degree = 3, accuracy = 96.92%
+Cross Validation Accuracy = 96.32%
+Cross Validation Accuracy = 96.28%
+Cross Validation Accuracy = 96.24%
+Cross Validation Accuracy = 96.36%
+Cross Validation Accuracy = 96.38%
+Cross Validation Accuracy = 96.32%
+Cross Validation Accuracy = 96.24%
+Cross Validation Accuracy = 79.62%
+Cross Validation Accuracy = 78.52%
+Cross Validation Accuracy = 78.06%
+Cross Validation Accuracy = 93.22%
+Cross Validation Accuracy = 96.02%
+Cross Validation Accuracy = 97.3%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 5, best degree = 6, accuracy = 97.3%
+Cross Validation Accuracy = 97.42%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 5, best degree = 7, accuracy = 97.42%
+Cross Validation Accuracy = 97.66%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 5, best degree = 8, accuracy = 97.66%
+Cross Validation Accuracy = 97.58%
+Cross Validation Accuracy = 97.68%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, best coef0 = 5, best degree = 10, accuracy = 97.68%
+Cross Validation Accuracy = 79.42%
+Cross Validation Accuracy = 45.44%
+Cross Validation Accuracy = 28.2%
+Cross Validation Accuracy = 23.46%
+Cross Validation Accuracy = 22.08%
+Cross Validation Accuracy = 21.34%
+Cross Validation Accuracy = 21%
+Cross Validation Accuracy = 20.78%
+Cross Validation Accuracy = 20.58%
+Cross Validation Accuracy = 20.5%
+Cross Validation Accuracy = 79.38%
+Cross Validation Accuracy = 98.04%
+Currently best C = 0.0001220703125, best gamma = 0.1, best coef0 = 5, best degree = 4, accuracy = 98.04%
+Cross Validation Accuracy = 97.94%
+Cross Validation Accuracy = 97.7%
+Cross Validation Accuracy = 97.52%
+Cross Validation Accuracy = 97.46%
+Cross Validation Accuracy = 97.26%
+Cross Validation Accuracy = 96.42%
+Cross Validation Accuracy = 79.22%
+Cross Validation Accuracy = 82.72%
+Cross Validation Accuracy = 90.96%
+Cross Validation Accuracy = 93.44%
+Cross Validation Accuracy = 93.86%
+Cross Validation Accuracy = 92.8%
+Cross Validation Accuracy = 90.8%
+Cross Validation Accuracy = 89.3%
+Cross Validation Accuracy = 87.6%
+Cross Validation Accuracy = 85.78%
+Cross Validation Accuracy = 79.44%
+Cross Validation Accuracy = 83.86%
+Cross Validation Accuracy = 92.2%
+Cross Validation Accuracy = 94.54%
+Cross Validation Accuracy = 94.84%
+Cross Validation Accuracy = 93.6%
+Cross Validation Accuracy = 98.06%
+Currently best C = 0.0001220703125, best gamma = 1, best coef0 = 256, best degree = 6, accuracy = 98.06%
+Cross Validation Accuracy = 97.94%
+Cross Validation Accuracy = 98%
+Cross Validation Accuracy = 97.98%
+Cross Validation Accuracy = 97.8%
+Cross Validation Accuracy = 90.68%
+Cross Validation Accuracy = 97.6%
+Cross Validation Accuracy = 97.9%
+Cross Validation Accuracy = 97.22%
+Cross Validation Accuracy = 96.18%
+Cross Validation Accuracy = 94.46%
+Cross Validation Accuracy = 93.02%
+Cross Validation Accuracy = 91.12%
+Cross Validation Accuracy = 89.44%
+Cross Validation Accuracy = 87.42%
+Cross Validation Accuracy = 90.64%
+Cross Validation Accuracy = 97.68%
+Cross Validation Accuracy = 97.52%
+Cross Validation Accuracy = 96.32%
+Cross Validation Accuracy = 94.94%
+Cross Validation Accuracy = 98.26%
+Currently best C = 0.0001220703125, best gamma = 10, best coef0 = 256, best degree = 3, accuracy = 98.26%
+Cross Validation Accuracy = 97.98%
+Cross Validation Accuracy = 97.64%
+Cross Validation Accuracy = 97.44%
+Cross Validation Accuracy = 96.74%
+Cross Validation Accuracy = 95.82%
+Cross Validation Accuracy = 95.18%
+Cross Validation Accuracy = 93.7%
+Cross Validation Accuracy = 95.64%
+Cross Validation Accuracy = 98.12%
+Cross Validation Accuracy = 93.04%
+Cross Validation Accuracy = 91.16%
+Cross Validation Accuracy = 89.26%
+Cross Validation Accuracy = 87.5%
+Cross Validation Accuracy = 96.1%
+Cross Validation Accuracy = 98.02%
+Cross Validation Accuracy = 97.62%
+Cross Validation Accuracy = 96.64%
+Cross Validation Accuracy = 95.08%
+Cross Validation Accuracy = 93.18%
+Cross Validation Accuracy = 91.34%
+Cross Validation Accuracy = 89.24%
+Cross Validation Accuracy = 87.42%
+Cross Validation Accuracy = 85.74%
+Cross Validation Accuracy = 96.28%
+Cross Validation Accuracy = 98.28%
+Currently best C = 1, best gamma = 1, best coef0 = 0.25, best degree = 2, accuracy = 98.28%
+Cross Validation Accuracy = 97.66%
+Cross Validation Accuracy = 96.64%
+Cross Validation Accuracy = 95.04%
+Cross Validation Accuracy = 93.3%
+Cross Validation Accuracy = 91.48%
+

@@ -1,0 +1,19 @@
+
+
+<------------ Grid Search & Test for Kernel: Linear------------>
+svm_type = 0, kernel_type = 0, kfold = 5
+Currently best C = 0.0001220703125, accuracy = 90.58%
+Currently best C = 0.000244140625, accuracy = 93.02%
+Currently best C = 0.00048828125, accuracy = 94.58%
+Currently best C = 0.0009765625, accuracy = 95.39999999999999%
+Currently best C = 0.001953125, accuracy = 95.96000000000001%
+Currently best C = 0.00390625, accuracy = 96.48%
+Currently best C = 0.0078125, accuracy = 96.89999999999999%
+Currently best C = 0.015625, accuracy = 97.22%
+> --------------------------------------------------------------
+> Done for grid search: 
+Best hyper parameter C = 0.015625, with highest accuracy = 97.22%
+> --------------------------------------------------------------
+> Testing with test datasets: 
+Accuracy = 95.92% (2398/2500) (classification)
+<------------------------ END ------------------------------>

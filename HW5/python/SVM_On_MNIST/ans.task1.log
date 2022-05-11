@@ -1,0 +1,17 @@
+------------
+Linear Kernel: 
+
+Accuracy = 95.08% (2377/2500) (classification)
+------------
+Polynomial Kernel: 
+parameter gamma = 0.001288659793814433
+parameter coef0 = 0.0
+parameter degree = 3
+
+Accuracy = 34.68% (867/2500) (classification)
+------------
+RBF Kernel: 
+parameter gamma = 0.001288659793814433
+
+Accuracy = 95.32% (2383/2500) (classification)
+------------

@@ -1,0 +1,36 @@
+
+
+<------------ Grid Search & Test for Kernel: RBF------------>
+svm_type = 0, kernel_type = 2, kfold = 5
+Currently best C = 0.0001220703125, best gamma = 0.0012755102040816326, accuracy = 81.39999999999999%
+Currently best C = 0.0001220703125, best gamma = 0.001953125, accuracy = 82.24000000000001%
+Currently best C = 0.0001220703125, best gamma = 0.00390625, accuracy = 84.66%
+Currently best C = 0.0001220703125, best gamma = 0.0078125, accuracy = 88.48%
+Currently best C = 0.0001220703125, best gamma = 0.015625, accuracy = 92.30000000000001%
+Currently best C = 0.0009765625, best gamma = 0.015625, accuracy = 92.46%
+Currently best C = 0.0078125, best gamma = 0.015625, accuracy = 92.86%
+Currently best C = 0.015625, best gamma = 0.0078125, accuracy = 93.14%
+Currently best C = 0.015625, best gamma = 0.015625, accuracy = 94.42%
+Currently best C = 0.03125, best gamma = 0.0078125, accuracy = 94.5%
+Currently best C = 0.03125, best gamma = 0.015625, accuracy = 95.26%
+Currently best C = 0.0625, best gamma = 0.0078125, accuracy = 95.66%
+Currently best C = 0.0625, best gamma = 0.015625, accuracy = 96.32%
+Currently best C = 0.125, best gamma = 0.0078125, accuracy = 96.34%
+Currently best C = 0.125, best gamma = 0.015625, accuracy = 96.96000000000001%
+Currently best C = 0.125, best gamma = 0.03125, accuracy = 97.22%
+Currently best C = 0.25, best gamma = 0.015625, accuracy = 97.56%
+Currently best C = 0.25, best gamma = 0.03125, accuracy = 97.76%
+Currently best C = 0.5, best gamma = 0.015625, accuracy = 97.94%
+Currently best C = 0.5, best gamma = 0.03125, accuracy = 98.08%
+Currently best C = 1.0, best gamma = 0.015625, accuracy = 98.1%
+Currently best C = 1.0, best gamma = 0.03125, accuracy = 98.44000000000001%
+Currently best C = 2.0, best gamma = 0.03125, accuracy = 98.6%
+Currently best C = 4.0, best gamma = 0.03125, accuracy = 98.61999999999999%
+Currently best C = 1024.0, best gamma = 0.03125, accuracy = 98.64%
+> --------------------------------------------------------------
+> Done for grid search: 
+Best hyper parameter C = 1024.0, gamma = 0.03125, with highest accuracy = 98.64%
+> --------------------------------------------------------------
+> Testing with test datasets: 
+Accuracy = 98.52% (2463/2500) (classification)
+<------------------------ END ------------------------------>

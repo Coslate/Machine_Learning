@@ -58,6 +58,7 @@ def main():
 
     #Perform Task 3 - Use Self-Defined New Kernel: linear+RBF
     if(task == 3):
+        SelfDefinedKernelSVM_WOGridSearch(train_x, train_y, test_x, test_y, is_debug)
         SelfDefinedKernelSVM(train_x, train_y, test_x, test_y, kfold, is_debug)
 
     if(is_debug):
@@ -66,7 +67,6 @@ def main():
         print(f"train_y.shape = {train_y.shape}")
         print(f"test_x.shape = {test_x.shape}")
         print(f"test_y.shape = {test_y.shape}")
-
         for images in input_train_y:
             for index, pixel in enumerate(images):
                 print(f"{int(pixel)}")
@@ -252,7 +252,7 @@ def SelfDefinedKernelSVM(train_x, train_y, test_x, test_y, kfold, is_debug):
     #Do the grid search for the hyper parameters: C and gamma
     print(f"")
     print(f"")
-    print(f"<------------ Grid Search & Test for Sell-Defined Kernel: Linear + RBF------------>")
+    print(f"<------------ Grid Search & Test for Self-Defined Kernel: Linear + RBF------------>")
     svm_type_def = '-s 0 -t 4'
     param        = svm_parameter(svm_type_def)
     print(f"svm_type = {param.svm_type}, kernel_type = {param.kernel_type}, kfold = {kfold}")
@@ -449,18 +449,10 @@ def GridSearchOpt(train_x, train_y, test_x, test_y, kfold, search_lin, search_po
         GridSearchKernelLinear(train_x, train_y, test_x, test_y, sweep_c, kfold, is_debug)
 
     if(search_pol):
-        sweep_c  = []
-        sweep_g  = [float(1/784)]
-        sweep_c0 = [0]
-        sweep_d  = [0]
-        for i in range(-13, 14):
-            sweep_c.append(np.power(2.0, i))
-        for i in range(-13, 14):
-            sweep_g.append(np.power(2.0, i))
-        for i in range(-13, 14):
-            sweep_c0.append(np.power(2.0, i))
-        for i in range(1, 11):
-            sweep_d.append(i)
+        sweep_c  = [np.power(2.0, -13), np.power(2.0, -6), 0.01, 0.1, 1, 10, 100, 1000, 10000]
+        sweep_g  = [np.power(2.0, -8), float(1/784), 0.1, 1, 10]
+        sweep_c0 = [256, 5, 0]
+        sweep_d  = [0, 1, 3, 5, 7, 9, 11]
         GridSearchKernelPolynomial(train_x, train_y, test_x, test_y, sweep_c, sweep_g, sweep_c0, sweep_d, kfold, is_debug)
 
     if(search_rbf):
@@ -520,6 +512,31 @@ def PrintMatrix(input_matrix, matrix_name):
                     print(f'{input_matrix[index_i][index_j]:20.10f}', end='') #will print the same
                 else:
                     print(f'{input_matrix[index_i][index_j]:20.10f}', end='') #will print the same
+
+def SelfDefinedKernelSVM_WOGridSearch(train_x, train_y, test_x, test_y, is_debug):
+    train_y = train_y.ravel()
+    test_y  = test_y.ravel()
+
+    #Do the grid search for the hyper parameters: C and gamma
+    print(f"")
+    print(f"")
+    print(f"<------------ Test with Default C and gamma for Self-Defined Kernel: Linear + RBF------------>")
+    svm_type_def = '-s 0 -t 4'
+    param        = svm_parameter(svm_type_def)
+    print(f"svm_type = {param.svm_type}, kernel_type = {param.kernel_type}")
+    best_g = 1/784.0
+    best_c = 1
+
+    #testing
+    result_train_kernel = BuildMixedKernel(train_x, train_x, best_g)
+    prob                = svm_problem(train_y, result_train_kernel, isKernel=True) #retrain the model with opt hyper parameters
+    param               = svm_parameter(svm_type_def+' -c '+str(best_c)+' -g '+str(best_g)+' -q')
+    model               = svm_train(prob, param)
+    result_test_kernel  = BuildMixedKernel(test_x, train_x, best_g)
+    if(is_debug):
+        print(f"param.C = {param.C}, param.gamma = {param.gamma}")
+    print(f"> Testing with test datasets: ")
+    svm_predict(test_y, result_test_kernel, model)
 
 #---------------Execution---------------#
 if __name__ == '__main__':
