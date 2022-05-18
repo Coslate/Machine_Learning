@@ -233,6 +233,7 @@ def KmeansClustering(cluster_result, init_centroids, cluster_num, kernel, row, c
     return new_cluster_result
 
 def KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, kernel, epsilon_err):
+    cluster_mean   = np.zeros(cluster_num)
     count          = 1
 
     print(f">>> KmeansClustering...")
@@ -248,7 +249,7 @@ def KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, k
         print(f"Iteration -- {count}, error_result = {error_result}")
         count += 1
 
-    return cluster_result
+    return cluster_result, cluster_mean
 
 def KernelKmeans(img_data, gs, gc, init_method, cluster_num, epsilon_err):
     cluster_img_list = []
@@ -264,7 +265,7 @@ def KernelKmeans(img_data, gs, gc, init_method, cluster_num, epsilon_err):
 
     #Perform the Kmeans algorithm
     print(f">> KmeansAlg...")
-    cluster_result = KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, kernel, epsilon_err)
+    (cluster_result, cluster_mean) = KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, kernel, epsilon_err)
 
     return (cluster_img_list)
 
