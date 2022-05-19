@@ -9,6 +9,7 @@ import math
 import sys
 import re
 import os
+import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import numba as nb
@@ -49,7 +50,7 @@ def main():
     (cluster_img2_list) = KernelKmeans(img_data2, gs, gc, init_method, cluster_num, epsilon_err)
 
     print(f"> OutputResult...")
-    OutputResult(cluster_img1_list, cluster_img2_list, directory)
+    OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num)
 
     if(is_debug):
         print(f"im_data1.type = {img_data1.shape}")
@@ -58,10 +59,10 @@ def main():
         img2 = Image.fromarray(img_data2)
         img1.save(f'{directory}/test_img1.png')
         img2.save(f'{directory}/test_img2.png')
-        fig, ax = plt.subplots(1,2)
-        ax[0].imshow(img1)
-        ax[1].imshow(img2)
-        plt.show()
+        #fig, ax = plt.subplots(1,2)
+        #ax[0].imshow(img1)
+        #ax[1].imshow(img2)
+        #plt.show()
 #       display(img1)
 #       display(img2)
 
@@ -132,12 +133,57 @@ def ArgumentParser():
 
     return (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, is_debug)
 
-def OutputResult(cluster_img1_list, cluster_img2_list, directory):
+def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num):
     if not os.path.exists(directory):
         os.makedirs(directory)
+    else:
+        #clean all gif and png files
+        for zippath in glob.iglob(os.path.join(directory, '*result*.png')):
+            os.remove(zippath)
 
-    cluster_img1_list[-1].save(f'{directory}/cluster_result_img1.png')
-    cluster_img2_list[-1].save(f'{directory}/cluster_result_img2.png')
+        for zippath in glob.iglob(os.path.join(directory, '*result*.gif')):
+            os.remove(zippath)
+
+    if(init_method == 0):
+        mode = "random"
+    elif(init_method == 1):
+        mode = "kmeans++"
+
+    #Output Iteration 1 result
+    out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_0"+"_img1.png"
+    out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_0"+"_img2.png"
+    if os.path.exists(out_img1_file_name):
+        os.remove(out_img1_file_name)
+
+    if os.path.exists(out_img2_file_name):
+        os.remove(out_img2_file_name)
+
+    cluster_img1_list[0].save(out_img1_file_name)
+    cluster_img2_list[0].save(out_img2_file_name)
+
+    #Output Iteration n result
+    out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(len(cluster_img1_list)-1)+"_img1.png"
+    out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(len(cluster_img2_list)-1)+"_img2.png"
+    if os.path.exists(out_img1_file_name):
+        os.remove(out_img1_file_name)
+
+    if os.path.exists(out_img2_file_name):
+        os.remove(out_img2_file_name)
+
+    cluster_img1_list[-1].save(out_img1_file_name)
+    cluster_img2_list[-1].save(out_img2_file_name)
+
+    #Output GIF files
+    out_gif1_file_name = directory+"/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+mode+"_img1.gif"
+    out_gif2_file_name = directory+"/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+mode+"_img2.gif"
+    if os.path.exists(out_gif1_file_name):
+        os.remove(out_gif1_file_name)
+
+    if os.path.exists(out_gif2_file_name):
+        os.remove(out_gif2_file_name)
+
+    cluster_img1_list[0].save(out_gif1_file_name, save_all=True, append_images=cluster_img1_list[1:], optimize=False, duration=150, loop=0)
+    cluster_img2_list[0].save(out_gif2_file_name, save_all=True, append_images=cluster_img2_list[1:], optimize=False, duration=150, loop=0)
 
 def CalculateKernelFunctions(img_data, gs, gc, row, col, color_dim):
     kernel                = np.zeros((row*col, row*col), dtype = np.float64)
@@ -305,7 +351,7 @@ def GenerateColor(cluster_num):
                 color_comb = np.array([r, g, b])
                 equal      = False
                 for x in range(3+left_color):
-                    if(color_comb == color_arr[x]):
+                    if((color_comb == color_arr).all()):
                         equal = True
                         break;
 
