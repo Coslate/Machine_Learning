@@ -8,7 +8,7 @@ import argparse
 import math
 import sys
 import re
-import copy
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import numba as nb
@@ -38,7 +38,7 @@ class color:
 def main():
     #Process the argument
     print(f"> ArgumentParser...")
-    (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, is_debug) = ArgumentParser()
+    (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, is_debug) = ArgumentParser()
 
     print(f"> ReadInputFile...")
     img_data1 = ReadInputFile(input_img1)
@@ -48,13 +48,16 @@ def main():
     (cluster_img1_list) = KernelKmeans(img_data1, gs, gc, init_method, cluster_num, epsilon_err)
     (cluster_img2_list) = KernelKmeans(img_data2, gs, gc, init_method, cluster_num, epsilon_err)
 
+    print(f"> OutputResult...")
+    OutputResult(cluster_img1_list, cluster_img2_list, directory)
+
     if(is_debug):
         print(f"im_data1.type = {img_data1.shape}")
         print(f"im_data2.type = {img_data2.shape}")
         img1 = Image.fromarray(img_data1)
         img2 = Image.fromarray(img_data2)
-        img1.save(r'./data/test_img1.png')
-        img2.save(r'./data/test_img2.png')
+        img1.save(f'{directory}/test_img1.png')
+        img2.save(f'{directory}/test_img2.png')
         fig, ax = plt.subplots(1,2)
         ax[0].imshow(img1)
         ax[1].imshow(img2)
@@ -73,6 +76,7 @@ def ArgumentParser():
     init_method         = 0
     cluster_num         = 2
     epsilon_err         = 0.0001
+    directory           = "./output"
     is_debug            = 0
 
     parser = argparse.ArgumentParser()
@@ -83,6 +87,7 @@ def ArgumentParser():
     parser.add_argument("--init_method",  "-init_m",   help="The method for choosing initial centroids for clustering. Set 0 for random selection. Set 1 for kmeans++ selection. Default 0.")
     parser.add_argument("--cluster_num",  "-cn",       help="The number of clusters you want. Default is 2.")
     parser.add_argument("--epsilon_err",  "-eps",      help="The error in neighbored step that Kmeans can terminate. Default is 0.0001.")
+    parser.add_argument("--directory",    "-dir",       help="The output directory of the result. Default is './output'")
     parser.add_argument("--is_debug",    "-isd",       help="1 for debug mode; 0 for normal mode.")
 
     args = parser.parse_args()
@@ -101,6 +106,8 @@ def ArgumentParser():
         cluster_num  = int(args.cluster_num)
     if(args.epsilon_err):
         epsilon_err  = float(args.epsilon_err)
+    if(args.directory):
+        directory    = args.directory
     if(args.is_debug):
         is_debug     = int(args.is_debug)
 
@@ -120,9 +127,17 @@ def ArgumentParser():
         print(f"init_method  = {init_method}")
         print(f"cluster_num  = {cluster_num}")
         print(f"epsilon_err  = {epsilon_err}")
+        print(f"directory    = {directory}")
         print(f"is_debug     = {is_debug}")
 
-    return (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, is_debug)
+    return (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, is_debug)
+
+def OutputResult(cluster_img1_list, cluster_img2_list, directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    cluster_img1_list[-1].save(f'{directory}/cluster_result_img1.png')
+    cluster_img2_list[-1].save(f'{directory}/cluster_result_img2.png')
 
 def CalculateKernelFunctions(img_data, gs, gc, row, col, color_dim):
     kernel                = np.zeros((row*col, row*col), dtype = np.float64)
@@ -153,8 +168,8 @@ def CenterInitialization(init_method, cluster_num, row, col):
     #Select K points to be the initialized init_centroids
     if(init_method == 0):
         #Random Selection
-        coords_x = (np.random.randint(0, row+1, cluster_num)).reshape(-1, 1)
-        coords_y = (np.random.randint(0, col+1, cluster_num)).reshape(-1, 1)
+        coords_x = (np.random.randint(0, row, cluster_num)).reshape(-1, 1)
+        coords_y = (np.random.randint(0, col, cluster_num)).reshape(-1, 1)
         init_centroids = np.hstack((coords_x, coords_y))
     elif(init_method == 1):
         #Kmeans++
@@ -169,6 +184,7 @@ def CenterInitialization(init_method, cluster_num, row, col):
 
     return cluster_result, init_centroids
 
+    '''
 def CalculateEachClusterGroup(cluster_result, cluster_num):
     cluster_group = [[] for x in range(cluster_num)]
     cluster_size  = np.zeros(cluster_num, dtype=np.float64)
@@ -181,38 +197,56 @@ def CalculateEachClusterGroup(cluster_result, cluster_num):
         cluster_group[int(assigned_cluster)].append(pixel_pos)
 
     return cluster_size, cluster_group
+    '''
 
 @nb.jit(nopython=True, nogil=True)
-def SumWithOtherClusterMem(pixel_pos, cluster_group, kernel):
+def CalculateEachClusterGroup(cluster_result, cluster_num):
+    cluster_size  = np.zeros(cluster_num, dtype=np.float64)
+
+    for assigned_cluster in cluster_result:
+        if(assigned_cluster == -1):
+            continue
+
+        cluster_size[int(assigned_cluster)] += 1
+
+    #Prevent dividing by zero
+    cluster_size[cluster_size == 0] = 1
+    return cluster_size
+
+@nb.jit(nopython=True, nogil=True)
+def SumWithOtherClusterMem(pixel_pos, cluster_result, kernel, total_size_image, clus_label):
     kernel_sum = 0
-    for pixel_pos_clusmem in cluster_group:
-        kernel_sum += kernel[pixel_pos][pixel_pos_clusmem]
+    for pixel_other_pos in range(total_size_image):
+        if(cluster_result[pixel_other_pos] == clus_label):
+            kernel_sum += kernel[pixel_pos][pixel_other_pos]
 
     return kernel_sum
 
 @nb.jit(nopython=True, nogil=True)
-def SumOtherTwoClusterMem(cluster_group, kernel):
-    cluster_tot_size = len(cluster_group)
-    kernel_sum   = 0
+def SumTwoClusterMem(cluster_result, cluster_num, kernel, total_size_image):
+    kernel_sum   = np.zeros(cluster_num)
 
-    for i in range(cluster_tot_size):
-        for j in range(cluster_tot_size):
-            kernel_sum += kernel[cluster_group[i]][cluster_group[j]]
+    for i in range(total_size_image):
+        for j in range(total_size_image):
+            if(cluster_result[i] == cluster_result[j]):
+                kernel_sum[int(cluster_result[i])] += kernel[i][j]
+
 
     return kernel_sum
 
 @nb.jit(nopython=True, nogil=True)
-def UpdateClusterIndicator(new_cluster_result, total_size_image, kernel, init_centroids, cluster_group, cluster_size, cluster_num):
+def UpdateClusterIndicator(new_cluster_result, cluster_result, total_size_image, kernel, init_centroids, cluster_size, cluster_num):
+    sum_two_mem        = SumTwoClusterMem(cluster_result, cluster_num, kernel, total_size_image)
+
     #Assign each pixel to its closest center
     for pixel_pos in range(total_size_image):
         distance = np.zeros(cluster_num, dtype=np.float64)
 
         #foreach of the cluster
-        for clus_num in range(cluster_num):
-            sum_with_other_mem = SumWithOtherClusterMem(pixel_pos, cluster_group[clus_num], kernel)
-            sum_other_two_mem  = SumOtherTwoClusterMem(cluster_group[clus_num], kernel)
+        for clus_label in range(cluster_num):
+            sum_with_other_mem = SumWithOtherClusterMem(pixel_pos, cluster_result, kernel, total_size_image, clus_label)
 
-            distance[clus_num] = kernel[pixel_pos][pixel_pos] - (2.0/cluster_size[clus_num])*sum_with_other_mem + (1/(cluster_size[clus_num]*cluster_size[clus_num]))*sum_other_two_mem
+            distance[clus_label] = kernel[pixel_pos][pixel_pos] - (2.0/cluster_size[clus_label])*sum_with_other_mem + (1/(cluster_size[clus_label]*cluster_size[clus_label]))*sum_two_mem[clus_label]
 
         new_cluster_result[pixel_pos] = np.argmin(distance)
 
@@ -220,38 +254,95 @@ def UpdateClusterIndicator(new_cluster_result, total_size_image, kernel, init_ce
 
 
 def KmeansClustering(cluster_result, init_centroids, cluster_num, kernel, row, col):
-    print(f">>>> CalculateEachClusterGroup...")
-    (cluster_size, cluster_group)  = CalculateEachClusterGroup(cluster_result, cluster_num)
-    cluster_group = np.array(cluster_group)
+    cluster_size  = CalculateEachClusterGroup(cluster_result, cluster_num)
 
-    print(f">>>> Assignment of each pixel to its closest center...")
     #Assign each pixel to its closest center
-    new_cluster_result = cluster_result.copy()
     total_size_image   = row*col
-    new_cluster_result = UpdateClusterIndicator(new_cluster_result, total_size_image, kernel, init_centroids, cluster_group, cluster_size, cluster_num)
+    new_cluster_result = np.zeros(total_size_image)
+    new_cluster_result = UpdateClusterIndicator(new_cluster_result, cluster_result, total_size_image, kernel, init_centroids, cluster_size, cluster_num)
 
     return new_cluster_result
 
-def KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, kernel, epsilon_err):
-    count          = 1
 
+def GenerateImg(cluster_result, row, col, color_arr):
+    img_data_gen = np.zeros((row*col, 3))
+    for i in range(row):
+        for j in range(col):
+            pos = i*col + j
+            if(cluster_result[pos] == -1):
+                img_data_gen[pos] = np.array([0, 0, 0])
+            else:
+                img_data_gen[pos] = color_arr[int(cluster_result[pos])]
+
+    img_data_gen = img_data_gen.reshape(row, col, 3)
+    img_data_gen = img_data_gen.astype(np.uint8)
+    return Image.fromarray(img_data_gen)
+
+def GenerateColor(cluster_num):
+    color_arr = np.zeros((cluster_num, 3))
+
+    if(cluster_num == 1):
+        color_arr[0] = np.array([255, 0, 0]) #R
+    elif(cluster_num == 2):
+        color_arr[0] = np.array([255, 0, 0]) #R
+        color_arr[1] = np.array([0, 255, 0]) #G
+    elif(cluster_num == 3):
+        color_arr[0] = np.array([255, 0, 0]) #R
+        color_arr[1] = np.array([0, 255, 0]) #G
+        color_arr[2] = np.array([0, 0, 255]) #B
+    elif(cluster_num > 3):
+        color_arr[0] = np.array([255, 0, 0]) #R
+        color_arr[1] = np.array([0, 255, 0]) #G
+        color_arr[2] = np.array([0, 0, 255]) #B
+
+        for left_color in range(cluster_num-3):
+            color_pos = left_color+3
+            while(True):
+                r = np.random.randint(0, 255+1)
+                g = np.random.randint(0, 255+1)
+                b = np.random.randint(0, 255+1)
+
+                color_comb = np.array([r, g, b])
+                equal      = False
+                for x in range(3+left_color):
+                    if(color_comb == color_arr[x]):
+                        equal = True
+                        break;
+
+                if(not equal):
+                    color_arr[color_pos] = color_comb
+                    break;
+    return color_arr
+
+def KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, kernel, epsilon_err):
+    cluster_img_list = []
+    count            = 1
+    color_arr        = GenerateColor(cluster_num)
+
+    clustered_img    = GenerateImg(cluster_result, row, col, color_arr)
+    cluster_img_list.append(clustered_img)
     print(f">>> KmeansClustering...")
     while(True):
         #Classify all samples according to the closest mean(init_centroids)
         new_cluster_result = KmeansClustering(cluster_result, init_centroids, cluster_num, kernel, row, col)
         error_result       = np.linalg.norm((new_cluster_result - cluster_result), ord=2)
 
-        cluster_result = new_cluster_result.copy()
+        cluster_result   = new_cluster_result.copy()
+        clustered_img    = GenerateImg(cluster_result, row, col, color_arr)
+        cluster_img_list.append(clustered_img)
+
         if(error_result < epsilon_err):
+            print(f"-------------------Achieved!!!---------------------")
+            print(f"Iteration -- {count}, error_result = {error_result}")
+            print(f"---------------------------------------------------")
             break;
 
         print(f"Iteration -- {count}, error_result = {error_result}")
         count += 1
 
-    return cluster_result
+    return cluster_img_list, cluster_result
 
 def KernelKmeans(img_data, gs, gc, init_method, cluster_num, epsilon_err):
-    cluster_img_list = []
     (row, col, color_dim) = img_data.shape
 
     #Calculate the kernel function
@@ -264,9 +355,9 @@ def KernelKmeans(img_data, gs, gc, init_method, cluster_num, epsilon_err):
 
     #Perform the Kmeans algorithm
     print(f">> KmeansAlg...")
-    cluster_result = KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, kernel, epsilon_err)
+    (cluster_img_list, cluster_result) = KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, kernel, epsilon_err)
 
-    return (cluster_img_list)
+    return cluster_img_list
 
 def ReadInputFile(input_file):
     im      = Image.open(input_file)
