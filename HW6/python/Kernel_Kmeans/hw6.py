@@ -152,11 +152,6 @@ def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, c
     #Output Iteration 1 result
     out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_0"+"_img1.png"
     out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_0"+"_img2.png"
-    if os.path.exists(out_img1_file_name):
-        os.remove(out_img1_file_name)
-
-    if os.path.exists(out_img2_file_name):
-        os.remove(out_img2_file_name)
 
     cluster_img1_list[0].save(out_img1_file_name)
     cluster_img2_list[0].save(out_img2_file_name)
@@ -164,11 +159,6 @@ def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, c
     #Output Iteration n result
     out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(len(cluster_img1_list)-1)+"_img1.png"
     out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(len(cluster_img2_list)-1)+"_img2.png"
-    if os.path.exists(out_img1_file_name):
-        os.remove(out_img1_file_name)
-
-    if os.path.exists(out_img2_file_name):
-        os.remove(out_img2_file_name)
 
     cluster_img1_list[-1].save(out_img1_file_name)
     cluster_img2_list[-1].save(out_img2_file_name)
@@ -176,11 +166,6 @@ def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, c
     #Output GIF files
     out_gif1_file_name = directory+"/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+mode+"_img1.gif"
     out_gif2_file_name = directory+"/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+mode+"_img2.gif"
-    if os.path.exists(out_gif1_file_name):
-        os.remove(out_gif1_file_name)
-
-    if os.path.exists(out_gif2_file_name):
-        os.remove(out_gif2_file_name)
 
     cluster_img1_list[0].save(out_gif1_file_name, save_all=True, append_images=cluster_img1_list[1:], optimize=False, duration=150, loop=0)
     cluster_img2_list[0].save(out_gif2_file_name, save_all=True, append_images=cluster_img2_list[1:], optimize=False, duration=150, loop=0)
