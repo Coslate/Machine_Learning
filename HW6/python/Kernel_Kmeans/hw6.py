@@ -204,14 +204,48 @@ def CenterInitialization(init_method, cluster_num, row, col):
         init_centroids = np.hstack((coords_x, coords_y))
     elif(init_method == 1):
         #Kmeans++
-        pass
+        #Step1 - Choose an initial center c1 uniformly.
+        coords_x = np.random.randint(0, row, 1)[0]
+        coords_y = np.random.randint(0, col, 1)[0]
+        init_centroids[0][0] = coords_x
+        init_centroids[0][1] = coords_y
+        has_chosen = 1
+
+        #Step2 - Choose next center ci with porbability = d(x)^2/(sum(d(x)^2).
+        while(has_chosen < cluster_num):
+            #Find the shortest distance of every pixel to all the chosen center
+            dist_to_center_shortest = np.zeros((row, col, 1), dtype=np.float64)
+            for i in range(row):
+                for j in range(col):
+                    coords = np.array([i, j])
+                    min_dist = np.inf
+                    for chosen_center_idx in range(has_chosen):
+                        chosen_center = init_centroids[chosen_center_idx]
+                        dist = math.pow(np.linalg.norm((chosen_center - coords), ord=2), 2)
+                        if(dist < min_dist):
+                            min_dist = dist
+                    dist_to_center_shortest[i][j] = min_dist
+
+            #Construct the probability : d(x)^2/sum(d(x)^2)
+            dist_to_center_shortest = dist_to_center_shortest.reshape(row*col)
+            dist_to_center_shortest /= np.sum(dist_to_center_shortest)
+            new_init_center = np.random.choice(row*col, 1, replace=False, p=dist_to_center_shortest)
+            new_init_i = math.floor(new_init_center[0]/col)
+            new_init_j = new_init_center[0]%col
+
+            if np.array([new_init_j, new_init_i]) in init_centroids:
+                continue
+            else:
+                init_centroids[has_chosen][0] = new_init_j
+                init_centroids[has_chosen][1] = new_init_i
+                has_chosen += 1
 
     #Initialize to the center points
     for clus_num, center in enumerate(init_centroids):
         i = center[1]
         j = center[0]
         pos = i*col + j
-        cluster_result[pos] = clus_num
+        cluster_result[int(pos)] = clus_num
 
     return cluster_result, init_centroids
 
