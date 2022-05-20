@@ -39,7 +39,7 @@ class color:
 def main():
     #Process the argument
     print(f"> ArgumentParser...")
-    (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, is_debug) = ArgumentParser()
+    (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, gen_first_k_iter, is_debug) = ArgumentParser()
 
     print(f"> ReadInputFile...")
     img_data1 = ReadInputFile(input_img1)
@@ -50,7 +50,7 @@ def main():
     (cluster_img2_list) = KernelKmeans(img_data2, gs, gc, init_method, cluster_num, epsilon_err)
 
     print(f"> OutputResult...")
-    OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num)
+    OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num, gen_first_k_iter)
 
     if(is_debug):
         print(f"im_data1.type = {img_data1.shape}")
@@ -78,6 +78,7 @@ def ArgumentParser():
     cluster_num         = 2
     epsilon_err         = 0.0001
     directory           = "./output"
+    gen_first_k_iter    = 2
     is_debug            = 0
 
     parser = argparse.ArgumentParser()
@@ -88,8 +89,9 @@ def ArgumentParser():
     parser.add_argument("--init_method",  "-init_m",   help="The method for choosing initial centroids for clustering. Set 0 for random selection. Set 1 for kmeans++ selection. Default 0.")
     parser.add_argument("--cluster_num",  "-cn",       help="The number of clusters you want. Default is 2.")
     parser.add_argument("--epsilon_err",  "-eps",      help="The error in neighbored step that Kmeans can terminate. Default is 0.0001.")
-    parser.add_argument("--directory",    "-dir",       help="The output directory of the result. Default is './output'")
-    parser.add_argument("--is_debug",    "-isd",       help="1 for debug mode; 0 for normal mode.")
+    parser.add_argument("--directory",        "-dir",       help="The output directory of the result. Default is './output'")
+    parser.add_argument("--gen_first_k_iter", "-gfk",       help="The number of the iteraions of the first k stages of kmeans will be output. Default is 2.")
+    parser.add_argument("--is_debug",          "-isd",      help="1 for debug mode; 0 for normal mode.")
 
     args = parser.parse_args()
 
@@ -108,9 +110,11 @@ def ArgumentParser():
     if(args.epsilon_err):
         epsilon_err  = float(args.epsilon_err)
     if(args.directory):
-        directory    = args.directory
+        directory         = args.directory
+    if(args.gen_first_k_iter):
+        gen_first_k_iter  = int(args.gen_first_k_iter)
     if(args.is_debug):
-        is_debug     = int(args.is_debug)
+        is_debug          = int(args.is_debug)
 
     if(input_img1 == None):
         print(f"Error: You should set '--input_img1' or '-img1' for the file name of the first input image.")
@@ -129,11 +133,12 @@ def ArgumentParser():
         print(f"cluster_num  = {cluster_num}")
         print(f"epsilon_err  = {epsilon_err}")
         print(f"directory    = {directory}")
+        print(f"gen_first_k_iter = {gen_first_k_iter}")
         print(f"is_debug     = {is_debug}")
 
-    return (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, is_debug)
+    return (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, gen_first_k_iter, is_debug)
 
-def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num):
+def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num, gen_first_k_iter):
     if not os.path.exists(directory):
         os.makedirs(directory)
     else:
@@ -149,12 +154,16 @@ def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, c
     elif(init_method == 1):
         mode = "kmeans++"
 
-    #Output Iteration 1 result
-    out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_0"+"_img1.png"
-    out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_0"+"_img2.png"
+    if(gen_first_k_iter > (len(cluster_img1_list)-1)):
+        gen_first_k_iter = len(cluster_img1_list)-1
 
-    cluster_img1_list[0].save(out_img1_file_name)
-    cluster_img2_list[0].save(out_img2_file_name)
+    for i in range(gen_first_k_iter):
+        #Output Iteration i result
+        out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(i)+"_img1.png"
+        out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(i)+"_img2.png"
+
+        cluster_img1_list[i].save(out_img1_file_name)
+        cluster_img2_list[i].save(out_img2_file_name)
 
     #Output Iteration n result
     out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(len(cluster_img1_list)-1)+"_img1.png"
