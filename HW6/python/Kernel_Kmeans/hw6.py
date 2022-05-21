@@ -208,16 +208,21 @@ def CenterInitialization(init_method, cluster_num, row, col):
     #Select K points to be the initialized init_centroids
     if(init_method == 0):
         #Random Selection
-        coords_x = (np.random.randint(0, row, cluster_num)).reshape(-1, 1)
-        coords_y = (np.random.randint(0, col, cluster_num)).reshape(-1, 1)
-        init_centroids = np.hstack((coords_x, coords_y))
+        for has_chosen in range(cluster_num):
+            new_init_center = np.random.choice(row*col, 1, replace=False)
+            new_init_i = math.floor(new_init_center[0]/col)
+            new_init_j = new_init_center[0]%col
+            init_centroids[has_chosen][0] = new_init_j
+            init_centroids[has_chosen][1] = new_init_i
+
     elif(init_method == 1):
         #Kmeans++
         #Step1 - Choose an initial center c1 uniformly.
-        coords_x = np.random.randint(0, row, 1)[0]
-        coords_y = np.random.randint(0, col, 1)[0]
-        init_centroids[0][0] = coords_x
-        init_centroids[0][1] = coords_y
+        new_init_center = np.random.choice(row*col, 1, replace=False)
+        new_init_i = math.floor(new_init_center[0]/col)
+        new_init_j = new_init_center[0]%col
+        init_centroids[0][0] = new_init_j
+        init_centroids[0][1] = new_init_i
         has_chosen = 1
 
         #Step2 - Choose next center ci with porbability = d(x)^2/(sum(d(x)^2).
