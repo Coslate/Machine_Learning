@@ -235,7 +235,7 @@ def CenterInitialization(init_method, cluster_num, row, col):
                     min_dist = np.inf
                     for chosen_center_idx in range(has_chosen):
                         chosen_center = init_centroids[chosen_center_idx]
-                        dist = math.pow(np.linalg.norm((chosen_center - coords), ord=2), 2)
+                        dist = math.pow(np.linalg.norm((chosen_center - coords)), 2)
                         if(dist < min_dist):
                             min_dist = dist
                     dist_to_center_shortest[i][j] = min_dist
@@ -247,7 +247,7 @@ def CenterInitialization(init_method, cluster_num, row, col):
             new_init_i = math.floor(new_init_center[0]/col)
             new_init_j = new_init_center[0]%col
 
-            if np.array([new_init_j, new_init_i]) in init_centroids:
+            if [new_init_j, new_init_i] in init_centroids.tolist():
                 continue
             else:
                 init_centroids[has_chosen][0] = new_init_j
@@ -404,7 +404,7 @@ def KmeansAlg(cluster_result, init_centroids, img_data, row, col, cluster_num, k
     while(True):
         #Classify all samples according to the closest mean(init_centroids)
         new_cluster_result = KmeansClustering(cluster_result, init_centroids, cluster_num, kernel, row, col)
-        error_result       = np.linalg.norm((new_cluster_result - cluster_result), ord=2)
+        error_result       = np.linalg.norm((new_cluster_result - cluster_result))
 
         cluster_result   = new_cluster_result.copy()
         clustered_img    = GenerateImg(cluster_result, row, col, color_arr)
