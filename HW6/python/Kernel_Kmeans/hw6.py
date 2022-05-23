@@ -155,14 +155,23 @@ def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, c
         mode = "kmeans++"
 
     if(gen_first_k_iter > (len(cluster_img1_list)-1)):
-        gen_first_k_iter = len(cluster_img1_list)-1
+        gen_first_k_iter_tmp = len(cluster_img1_list)-1
+    else:
+        gen_first_k_iter_tmp = gen_first_k_iter
 
-    for i in range(gen_first_k_iter):
+    for i in range(gen_first_k_iter_tmp):
         #Output Iteration i result
         out_img1_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(i)+"_img1.png"
-        out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(i)+"_img2.png"
-
         cluster_img1_list[i].save(out_img1_file_name)
+
+    if(gen_first_k_iter > (len(cluster_img2_list)-1)):
+        gen_first_k_iter_tmp = len(cluster_img2_list)-1
+    else:
+        gen_first_k_iter_tmp = gen_first_k_iter
+
+    for i in range(gen_first_k_iter_tmp):
+        #Output Iteration i result
+        out_img2_file_name = directory + "/kernelkmeans_result_cluster_"+str(cluster_num)+"_mode_"+str(mode)+"_iteration_"+str(i)+"_img2.png"
         cluster_img2_list[i].save(out_img2_file_name)
 
     #Output Iteration n result
