@@ -39,18 +39,18 @@ class color:
 def main():
     #Process the argument
     print(f"> ArgumentParser...")
-    (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, gen_first_k_iter, mod, is_debug) = ArgumentParser()
+    (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, gen_first_k_iter, mod, discard_min_num, is_debug) = ArgumentParser()
 
     print(f"> ReadInputFile...")
     img_data1 = ReadInputFile(input_img1)
     img_data2 = ReadInputFile(input_img2)
 
     print(f"> SpectralClustering...")
-    (cluster_img1_list, color_arr1, final_cluster_result1, eigen_matrix1) = SpectralClustering(img_data1, gs, gc, init_method, cluster_num, epsilon_err, mod)
-    (cluster_img2_list, color_arr2, final_cluster_result2, eigen_matrix2) = SpectralClustering(img_data2, gs, gc, init_method, cluster_num, epsilon_err, mod)
+    (cluster_img1_list, color_arr1, final_cluster_result1, eigen_matrix1, cut_result1) = SpectralClustering(img_data1, gs, gc, init_method, cluster_num, epsilon_err, mod, discard_min_num)
+    (cluster_img2_list, color_arr2, final_cluster_result2, eigen_matrix2, cut_result2) = SpectralClustering(img_data2, gs, gc, init_method, cluster_num, epsilon_err, mod, discard_min_num)
 
     print(f"> OutputResult...")
-    OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num, gen_first_k_iter, mod)
+    OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num, gen_first_k_iter, mod, cut_result1, cut_result2, discard_min_num)
 
     print(f"> PrintDataEigenSpace...")
     PrintDataEigenSpace(cluster_img1_list, color_arr1, final_cluster_result1, eigen_matrix1, cluster_num, mod, init_method, 1, directory)
@@ -84,6 +84,7 @@ def ArgumentParser():
     directory           = "./output"
     gen_first_k_iter    = 2
     mod                 = 0
+    discard_min_num     = 1
     is_debug            = 0
 
     parser = argparse.ArgumentParser()
@@ -97,6 +98,7 @@ def ArgumentParser():
     parser.add_argument("--directory",        "-dir",       help="The output directory of the result. Default is './output'")
     parser.add_argument("--gen_first_k_iter", "-gfk",       help="The number of the iteraions of the first k stages of kmeans will be output. Default is 2.")
     parser.add_argument("--mod",              "-mod",       help="0 for ratio cut. 1 for normalized cut. Default is 0.")
+    parser.add_argument("--discard_min_num",  "-dis",       help="The number of mininum eigenvectors that you want to discard. Default is 1.")
     parser.add_argument("--is_debug",         "-isd",       help="1 for debug mode; 0 for normal mode.")
 
     args = parser.parse_args()
@@ -121,6 +123,8 @@ def ArgumentParser():
         gen_first_k_iter  = int(args.gen_first_k_iter)
     if(args.mod):
         mod               = int(args.mod)
+    if(args.discard_min_num):
+        discard_min_num   = int(args.discard_min_num)
     if(args.is_debug):
         is_debug          = int(args.is_debug)
 
@@ -143,14 +147,14 @@ def ArgumentParser():
         print(f"directory    = {directory}")
         print(f"gen_first_k_iter = {gen_first_k_iter}")
         print(f"mod              = {mod}")
+        print(f"discard_min_num  = {discard_min_num}")
         print(f"is_debug         = {is_debug}")
 
-    return (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, gen_first_k_iter, mod, is_debug)
+    return (input_img1, input_img2, gs, gc, init_method, cluster_num, epsilon_err, directory, gen_first_k_iter, mod, discard_min_num, is_debug)
 
 
 def PrintDataEigenSpace(cluster_img_list, color_arr, final_cluster_result, eigen_matrix, cluster_num, mod, init_method, img, directory):
     #Only Plot with cluster_num == 2 or cluster_num ==3
-    print(f"cluster_num = {cluster_num}")
     if((cluster_num != 2) and (cluster_num != 3)): return
 
     if not os.path.exists(directory):
@@ -209,7 +213,7 @@ def PrintDataEigenSpace(cluster_img_list, color_arr, final_cluster_result, eigen
 
     plt.savefig(out_file_name)
 
-def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num, gen_first_k_iter, mod):
+def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, cluster_num, gen_first_k_iter, mod, cut_result1, cut_result2, discard_min_num):
     if not os.path.exists(directory):
         os.makedirs(directory)
     else:
@@ -218,6 +222,9 @@ def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, c
             os.remove(zippath)
 
         for zippath in glob.iglob(os.path.join(directory, '*result*.gif')):
+            os.remove(zippath)
+
+        for zippath in glob.iglob(os.path.join(directory, '*result*.txt')):
             os.remove(zippath)
 
     if(init_method == 0):
@@ -263,6 +270,23 @@ def OutputResult(cluster_img1_list, cluster_img2_list, directory, init_method, c
 
     cluster_img1_list[0].save(out_gif1_file_name, save_all=True, append_images=cluster_img1_list[1:], optimize=False, duration=150, loop=0)
     cluster_img2_list[0].save(out_gif2_file_name, save_all=True, append_images=cluster_img2_list[1:], optimize=False, duration=150, loop=0)
+
+    #Output cut result
+    output_cut_file_name1 = directory+"/"+str(cut)+"_kmeans_result_cluster_"+str(cluster_num)+"_mode_"+mode+"_d"+str(discard_min_num)+"_cut_value_img1.txt"
+    lines = [f"{cut}, ", f"cluster_num = {cluster_num}, ", f"discard min features = {discard_min_num}, ", f"optimized cut value = {abs(cut_result1)} "]
+    with open(output_cut_file_name1, 'w') as f:
+        for line in lines:
+            f.write(line)
+            f.write('\n')
+
+    output_cut_file_name2 = directory+"/"+str(cut)+"_kmeans_result_cluster_"+str(cluster_num)+"_mode_"+mode+"_d"+str(discard_min_num)+"_cut_value_img2.txt"
+    lines = [f"{cut}, ", f"cluster_num = {cluster_num}, ", f"discard min features = {discard_min_num}, ", f"optimized cut value = {abs(cut_result2)} "]
+    with open(output_cut_file_name2, 'w') as f:
+        for line in lines:
+            f.write(line)
+            f.write('\n')
+
+
 
 def CalculateKernelFunctions(img_data, gs, gc, row, col, color_dim):
     total_n               = row*col
@@ -524,16 +548,18 @@ def CalculateLaplacianMatrix(w_matrix, row, col, total_n):
 
     return lap_matrix, d_matrix
 
-def FormMinKEigenMatrix(lap_matrix, row, col, total_n, cluster_num):
+def FormMinKEigenMatrix(lap_matrix, row, col, total_n, cluster_num, discard_min_num):
     eigen_values, eigen_vectors = np.linalg.eig(lap_matrix)
     eigen_matrix = np.zeros((total_n, cluster_num), dtype=eigen_vectors.dtype)
 
     #Select k min non-null eigen_vectors
     eigen_values_chosen = eigen_values.copy()
     has_chosen = 0
+    count_discard = 0
     while(has_chosen < cluster_num):
         chosen_idx = np.argmin(eigen_values_chosen)
-        if(abs(eigen_values_chosen[chosen_idx]-0) < 1e-10):
+        if(count_discard < discard_min_num):
+            count_discard += 1
             eigen_values_chosen[chosen_idx] = np.inf
             continue
 
@@ -545,28 +571,37 @@ def FormMinKEigenMatrix(lap_matrix, row, col, total_n, cluster_num):
         has_chosen += 1
     return eigen_matrix
 
-def CalculateEigenMatrix(lap_matrix, d_matrix, row, col, total_n, mod, cluster_num):
+def CalculateEigenMatrix(lap_matrix, d_matrix, row, col, total_n, mod, cluster_num, discard_min_num):
+    d_neghalf_matrix   = np.zeros((total_n, total_n), dtype = np.float64)
+    eigen_matrix_t     = np.zeros((total_n, total_n), dtype = np.float64)
+
     if(mod == 0):
         #Ration Cut
-        eigen_matrix = FormMinKEigenMatrix(lap_matrix, row, col, total_n, cluster_num)
+        eigen_matrix   = FormMinKEigenMatrix(lap_matrix, row, col, total_n, cluster_num, discard_min_num)
     else:
         #Normalized Cut
-        d_neghalf_matrix   = np.zeros((total_n, total_n), dtype = np.float64)
         for i in range(d_matrix.shape[0]):
             for j in range(d_matrix.shape[1]):
                 if(i == j):
                     d_neghalf_matrix[i][j] = 1.0/math.sqrt(d_matrix[i][j])
 
         lap_matrix_sys = (d_neghalf_matrix@lap_matrix)@d_neghalf_matrix
-        eigen_matrix = FormMinKEigenMatrix(lap_matrix_sys, row, col, total_n, cluster_num)
+        eigen_matrix   = FormMinKEigenMatrix(lap_matrix_sys, row, col, total_n, cluster_num, discard_min_num)
+        eigen_matrix_t = eigen_matrix.copy()
 
         #Normalized each row of the eigen_matrix
         for i in range(eigen_matrix.shape[0]):
             eigen_matrix[i] = eigen_matrix[i] / np.linalg.norm(eigen_matrix[i])
 
-    return eigen_matrix
+    return eigen_matrix, eigen_matrix_t, d_neghalf_matrix
 
-def SpectralClustering(img_data, gs, gc, init_method, cluster_num, epsilon_err, mod):
+def CutEstimation(eigen_matrix, lap_matrix, mod, eigen_matrix_t, d_neghalf_matrix):
+    if(mod == 0):
+        return (np.trace(eigen_matrix.T@lap_matrix@eigen_matrix))
+    else:
+        return (np.trace(eigen_matrix_t.T@d_neghalf_matrix@lap_matrix@d_neghalf_matrix@eigen_matrix_t))
+
+def SpectralClustering(img_data, gs, gc, init_method, cluster_num, epsilon_err, mod, discard_min_num):
     (row, col, color_dim) = img_data.shape
 
     #Calculate the kernel function
@@ -579,7 +614,7 @@ def SpectralClustering(img_data, gs, gc, init_method, cluster_num, epsilon_err, 
 
     print(f">> CalculateEigenMatrix...")
     #Calculate Eigen Matrix
-    eigen_matrix = CalculateEigenMatrix(lap_matrix, d_matrix, row, col, total_n, mod, cluster_num)
+    eigen_matrix, eigen_matrix_t, d_neghalf_matrix = CalculateEigenMatrix(lap_matrix, d_matrix, row, col, total_n, mod, cluster_num, discard_min_num)
     #eigen_matrix = eigen_matrix.astype(np.float64)
 
     #Calculate the initial centering
@@ -590,7 +625,11 @@ def SpectralClustering(img_data, gs, gc, init_method, cluster_num, epsilon_err, 
     print(f">> KmeansAlg...")
     cluster_img_list, color_arr, final_cluster_result= KmeansAlg(cluster_result, init_centroids, img_data, row, col, total_n, cluster_num, eigen_matrix, epsilon_err)
 
-    return cluster_img_list, color_arr, final_cluster_result, eigen_matrix
+    #Estimate the Cut result
+    print(f">> CutEstimation...")
+    cut_result = CutEstimation(eigen_matrix, lap_matrix, mod, eigen_matrix_t, d_neghalf_matrix)
+
+    return cluster_img_list, color_arr, final_cluster_result, eigen_matrix, cut_result
 
 def ReadInputFile(input_file):
     im      = Image.open(input_file)
