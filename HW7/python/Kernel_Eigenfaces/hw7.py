@@ -40,17 +40,25 @@ class color:
 def main():
     #Process the argument
     print(f"> ArgumentParser...")
-    (input_training_dir, input_testing_dir, largest_k, output_dir, k_nearest_neighbor, row, col, is_debug) = ArgumentParser()
+    (input_training_dir, input_testing_dir, largest_k_pca, largest_k_lda, output_dir, k_nearest_neighbor, row, col, auto_constraint, pol_gamma, pol_coef0, pol_degree, rbf_gamma, is_debug) = ArgumentParser()
 
     print(f"> ReadInputFile...")
     train_img_data, train_img_label, row, col = ReadInputFile(input_training_dir, row, col)
     test_img_data, test_img_label, row, col   = ReadInputFile(input_testing_dir, row, col)
 
     print(f"> PerformPCA...")
-    PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir)
+    PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir)
+
+    print(f"> PerformKernelPCA...")
+    print(f">> Linear Kernel...")
+    PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 0, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+    print(f">> Polynomial Kernel...")
+    PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 1, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+    print(f">> RBF Kernel...")
+    PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 2, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
     print(f"> PerformLDA...")
-    PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir)
+    PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_lda, k_nearest_neighbor, row, col, output_dir, auto_constraint)
 
     if(is_debug):
         pass
@@ -71,20 +79,32 @@ def main():
 def ArgumentParser():
     input_training_dir  = None
     input_testing_dir   = None
-    largest_k           = 30
-    k_nearest_neighbor  = 10
+    largest_k_pca       = 25
+    largest_k_lda       = 14
+    k_nearest_neighbor  = 5
     output_dir          = "./output"
     row                 = 29
     col                 = 41
+    auto_constraint     = 1
+    pol_gamma           = 0.01
+    pol_coef0           = 0
+    pol_degree          = 3
+    rbf_gamma           = 0.000001
     is_debug            = 0
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_training_dir",    "-itrd",     help="The directory name includes all training images.")
     parser.add_argument("--input_testing_dir",     "-ited",     help="The directory name includes all testing images.")
-    parser.add_argument("--largest_k",             "-lmk",      help="The number of largest k eigenvectors that will be chosen in PCA. Default is 30.")
+    parser.add_argument("--largest_k_pca",         "-lmk_pca",  help="The number of largest k eigenvectors that will be chosen in PCA. Default is 25.")
+    parser.add_argument("--largest_k_lda",         "-lmk_lda",  help="The number of largest k eigenvectors that will be chosen in LDA. Default is 14.")
     parser.add_argument("--k_nearest_neighbor",    "-knn",      help="The number of nearest k neighbors for classifying wihich labels a testing object belongs to. Default is 10.")
     parser.add_argument("--row",                   "-row",      help="The resized row of the original image. Default is 29.")
     parser.add_argument("--col",                   "-col",      help="The resized col of the original image. Default is 41.")
+    parser.add_argument("--auto_constraint",       "-auc",      help="Set 1 to auto constraints the maximal number of eigenvectors to be the cluster number. Set 0 for no such constraint. Default is 1.")
+    parser.add_argument("--pol_gamma",             "-pg",       help="The gamma parameter of Polynomial Kernel. Default is 0.01.")
+    parser.add_argument("--pol_coef0",             "-pc",       help="The coef0 parameter of Polynomial Kernel. Default is 0.")
+    parser.add_argument("--pol_degree",            "-pd",       help="The degree parameter of Polynomial Kernel. Default is 3.")
+    parser.add_argument("--rbf_gamma",             "-rg",       help="The gamma parameter of RBF Kernel. Default is 0.000001.")
     parser.add_argument("--output_dir",            "-odr",      help="The output directory of the result. Default is './output'")
     parser.add_argument("--is_debug",              "-isd",      help="1 for debug mode; 0 for normal mode.")
 
@@ -94,14 +114,26 @@ def ArgumentParser():
         input_training_dir = args.input_training_dir
     if(args.input_testing_dir):
         input_testing_dir  = args.input_testing_dir
-    if(args.largest_k):
-        largest_k          = int(args.largest_k)
+    if(args.largest_k_pca):
+        largest_k_pca          = int(args.largest_k_pca)
+    if(args.largest_k_lda):
+        largest_k_lda          = int(args.largest_k_lda)
     if(args.k_nearest_neighbor):
         k_nearest_neighbor = int(args.k_nearest_neighbor)
     if(args.row):
         row                = int(args.row)
     if(args.col):
         col                = int(args.col)
+    if(args.auto_constraint):
+        auto_constraint    = int(args.auto_constraint)
+    if(args.pol_gamma):
+        pol_gamma          = float(args.pol_gamma)
+    if(args.pol_coef0):
+        pol_coef0          = float(args.pol_coef0)
+    if(args.pol_degree):
+        pol_degree         = float(args.pol_degree)
+    if(args.rbf_gamma):
+        rbf_gamma          = float(args.rbf_gamma)
     if(args.output_dir):
         output_dir         = args.output_dir
     if(args.is_debug):
@@ -118,14 +150,20 @@ def ArgumentParser():
     if(is_debug):
         print(f"input_training_dir   = {input_training_dir}")
         print(f"input_testing_dir    = {input_testing_dir}")
-        print(f"largest_k            = {largest_k}")
+        print(f"largest_k_pca        = {largest_k_pca}")
+        print(f"largest_k_lda        = {largest_k_lda}")
         print(f"k_nearest_neighbor   = {k_nearest_neighbor}")
         print(f"row                  = {row}")
         print(f"col                  = {col}")
+        print(f"auto_constraint      = {auto_constraint}")
+        print(f"pol_gamma            = {pol_gamma}")
+        print(f"pol_coef0            = {pol_coef0}")
+        print(f"pol_degree           = {pol_degree}")
+        print(f"rbf_gamma            = {rbf_gamma}")
         print(f"output_dir           = {output_dir}")
         print(f"is_debug             = {is_debug}")
 
-    return (input_training_dir, input_testing_dir, largest_k, output_dir, k_nearest_neighbor, row, col, is_debug)
+    return (input_training_dir, input_testing_dir, largest_k_pca, largest_k_lda, output_dir, k_nearest_neighbor, row, col, auto_constraint, pol_gamma, pol_coef0, pol_degree, rbf_gamma, is_debug)
 
 def FormMatrixLDA(data_matrix, label_matrix):
     N          = data_matrix.shape[0] #135
@@ -179,7 +217,26 @@ def FormMatrixLDA(data_matrix, label_matrix):
     #Calculate the (sw^-1)*sb
     w_mat = np.linalg.pinv(sw) @ sb
 
-    return w_mat
+    return w_mat, len(class_num)
+
+def FormKernelMatrixPCA(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+    N           = data_matrix.shape[1]
+    data_matrix = data_matrix.astype(np.float64)
+
+    #Calculate kernel matrix
+    if(kernel_choice == 0):  #Linear
+        #kernel_mat = data_matrix.T @ data_matrix
+        kernel_mat  = data_matrix.T.dot(data_matrix)
+    elif(kernel_choice == 1):#Polynomial
+        kernel_mat = np.power((pol_gamma*(data_matrix.T @ data_matrix) + pol_coef0), pol_degree)
+    elif(kernel_choice == 2):#RBF
+        kernel_mat = np.exp(-rbf_gamma*(distance.cdist(data_matrix.T, data_matrix.T, 'sqeuclidean')))
+
+    #Adjust center point
+    one_n_mat    = np.full((N, N), 1/N, dtype=np.float64)
+    kernel_c_mat = kernel_mat - one_n_mat@kernel_mat - kernel_mat@one_n_mat + one_n_mat@kernel_mat@one_n_mat
+
+    return kernel_c_mat
 
 def FormCovMatrixPCA(data_matrix):
     N          = data_matrix.shape[0] #135
@@ -196,7 +253,7 @@ def FormCovMatrixPCA(data_matrix):
     #Calculate x-ux
     for i in range(data_matrix.shape[0]):
         for j in range(data_matrix.shape[1]):
-            x_min_xmean[j][i] = data_matrix[i][j] - data_mean[j]
+            x_min_xmean[j][i] = float(data_matrix[i][j]) - data_mean[j]
 
     cov_matrix = x_min_xmean @ x_min_xmean.T
     cov_matrix = cov_matrix/N
@@ -205,8 +262,8 @@ def FormCovMatrixPCA(data_matrix):
 
 def FormMaxKEigenMatrix(in_matrix, total_n, largest_k):
     eigen_values, eigen_vectors = np.linalg.eig(in_matrix)
-    eigen_matrix = np.zeros((total_n, largest_k), dtype=np.float64)
-#    eigen_matrix = np.zeros((total_n, largest_k), dtype=eigen_vectors.dtype)
+#    eigen_matrix = np.zeros((total_n, largest_k), dtype=np.float64)
+    eigen_matrix = np.zeros((total_n, largest_k), dtype=eigen_vectors.dtype)
 
     #Select k max eigen_vectors
     eigen_values_chosen = eigen_values.copy()
@@ -216,14 +273,14 @@ def FormMaxKEigenMatrix(in_matrix, total_n, largest_k):
 
         #fill in the largest eigen_vectors in eigen_matrix
         for i in range(eigen_matrix.shape[0]): #foreach row
-            eigen_matrix[i][has_chosen] = eigen_vectors[i][chosen_idx].real
-#            eigen_matrix[i][has_chosen] = eigen_vectors[i][chosen_idx]
+#            eigen_matrix[i][has_chosen] = eigen_vectors[i][chosen_idx].real
+            eigen_matrix[i][has_chosen] = eigen_vectors[i][chosen_idx]
 
         eigen_values_chosen[chosen_idx] = -np.inf
         has_chosen += 1
     return eigen_matrix
 
-def ShowEigenFaces(eigen_mat, row, col, directory, out_file_name):
+def ShowEigenFaces(eigen_mat, row, col, directory, out_file_name, largest_k):
     total_num       = eigen_mat.shape[1]
     eigen_mat_trans = eigen_mat.T
 
@@ -238,12 +295,12 @@ def ShowEigenFaces(eigen_mat, row, col, directory, out_file_name):
         eigen_face = eigen_mat_trans[index].reshape(row, col)
         #scale to 0-255
         eigen_face = ((eigen_face - eigen_face.min()) * (1/(eigen_face.max() - eigen_face.min()) * 255))
-        output_file_name = directory + "/"+out_file_name+"_eigen"+str(index+1)+".png"
+        output_file_name = directory + "/"+out_file_name+"_w_largest_"+str(largest_k)+"_ev_eigen"+str(index+1)+".png"
         img_data_gen = eigen_face.astype(np.uint8)
         img_data_gen = Image.fromarray(img_data_gen)
         img_data_gen.save(output_file_name)
 
-def FacesReconstruction(train_img_data, eigen_mat, directory, row, col, out_file_name):
+def FacesReconstruction(train_img_data, eigen_mat, directory, row, col, out_file_name, largest_k):
     if not os.path.exists(directory):
         os.makedirs(directory)
     else:
@@ -258,16 +315,16 @@ def FacesReconstruction(train_img_data, eigen_mat, directory, row, col, out_file
     new_dim    = eigen_mat.shape[1]
     picked_num = np.random.choice(train_img_data.shape[0], 10, replace=False)
     for i in range(10):
-        picked_x      = train_img_data[picked_num[i]]
+        picked_x      = train_img_data[picked_num[i]].astype(np.float64)
         reconstruct_z = picked_x.reshape(1, orig_dim) @ eigen_mat @ eigen_mat.T
         reconstruct_z = reconstruct_z.reshape(row, col)
         reconstruct_z = (reconstruct_z - reconstruct_z.min()) * (1/(reconstruct_z.max() - reconstruct_z.min()) * 255)
 
-        out_file_origin_name = directory + "/"+out_file_name+"_origin"+str(i+1)+".png"
+        out_file_origin_name = directory + "/"+out_file_name+"_w_largest_"+str(largest_k)+"_ev_origin"+str(i+1)+".png"
         img_data_gen = picked_x.reshape(row, col).astype(np.uint8)
         img_data_gen = Image.fromarray(img_data_gen)
         img_data_gen.save(out_file_origin_name)
-        out_file_recon_name = directory + "/"+out_file_name+"_reconstruct"+str(i+1)+".png"
+        out_file_recon_name = directory + "/"+out_file_name+"_w_largest_"+str(largest_k)+"_ev_reconstruct"+str(i+1)+".png"
         img_data_gen = reconstruct_z.astype(np.uint8)
         img_data_gen = Image.fromarray(img_data_gen)
         img_data_gen.save(out_file_recon_name)
@@ -279,12 +336,12 @@ def ConvertToLowDimension(input_img_arr, eigen_mat):
     low_dim_z  = np.zeros((N, new_dim), dtype=np.float64)
 
     for i in range(N):
-        picked_x      = input_img_arr[i]
+        picked_x      = input_img_arr[i].astype(np.float64)
         low_dim_z[i]  = picked_x.reshape(1, orig_dim) @ eigen_mat
 
     return low_dim_z
 
-def Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, out_file_name):
+def Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, out_file_name, largest_k):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     else:
@@ -332,29 +389,57 @@ def Classification(test_img_data, test_img_label, train_img_data, train_img_labe
 
     print(f"correct = {correct}")
     output_file_name = output_dir+"/"+out_file_name+"_classification.txt"
-    lines = [f"knn with k = {k_nearest_neighbor}, ", f"#correctly classified = {correct}, ", f"#total = {test_img_label.shape[0]}, ", f"accuracy = {(correct/test_img_label.shape[0])*100}%"]
+    lines = [f"Use first {largest_k} largest eigenvectors, ", f"knn with k = {k_nearest_neighbor}, ", f"#correctly classified = {correct}, ", f"#total = {test_img_label.shape[0]}, ", f"accuracy = {(correct/test_img_label.shape[0])*100}%"]
     with open(output_file_name, 'w') as f:
         for line in lines:
             f.write(line)
             f.write('\n')
 
-def PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir):
+def PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, auto_constraint):
     output_dir += "/LDA"
 
     #Form the covariance matrix
-    w_mat      = FormMatrixLDA(train_img_data, train_img_label)
+    w_mat, total_class_num  = FormMatrixLDA(train_img_data, train_img_label)
+
+    #Constraint by rank of sb
+    if(auto_constraint and (largest_k > total_class_num)):
+        largest_k = total_class_num
 
     #Do the eigen decomposition on the covariance matrix
     eigen_mat  = FormMaxKEigenMatrix(w_mat, w_mat.shape[0], largest_k)
 
     #Show the eigen faces, the first largest eigen vectors
-    ShowEigenFaces(eigen_mat, row, col, output_dir, "lda")
+    ShowEigenFaces(eigen_mat, row, col, output_dir, "lda", largest_k)
 
     #Randomly pick 10 faces in train_img_data and do the reconstruction based on the eigen faces
-    FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "lda")
+    FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "lda", largest_k)
 
     #Classification on testing images
-    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "lda_knn")
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "lda_knn", largest_k)
+
+def PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+    if(kernel_choice == 0):
+        kernel_name = "Linear"
+    elif(kernel_choice == 1):
+        kernel_name = "Polynomial"
+    elif(kernel_choice == 2):
+        kernel_name = "RBF"
+
+    output_dir += "/Kernel_"+kernel_name+"_PCA"
+
+    #Form the covariance matrix
+    kernel_c_mat    = FormKernelMatrixPCA(train_img_data, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+    #Do the eigen decomposition on the covariance matrix
+    eigen_mat  = FormMaxKEigenMatrix(kernel_c_mat, kernel_c_mat.shape[0], largest_k)
+
+    #Show the eigen faces, the first largest eigen vectors
+    ShowEigenFaces(eigen_mat, row, col, output_dir, "kernel_pca", largest_k)
+
+    #Randomly pick 10 faces in train_img_data and do the reconstruction based on the eigen faces
+    FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "kernel_pca", largest_k)
+
+    #Classification on testing images
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k)
 
 def PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir):
     output_dir += "/PCA"
@@ -366,13 +451,13 @@ def PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, l
     eigen_mat  = FormMaxKEigenMatrix(cov_mat, cov_mat.shape[0], largest_k)
 
     #Show the eigen faces, the first largest eigen vectors
-    ShowEigenFaces(eigen_mat, row, col, output_dir, "pca")
+    ShowEigenFaces(eigen_mat, row, col, output_dir, "pca", largest_k)
 
     #Randomly pick 10 faces in train_img_data and do the reconstruction based on the eigen faces
-    FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "pca")
+    FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "pca", largest_k)
 
     #Classification on testing images
-    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn")
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k)
 
 def ReadInputFile(input_directory, row, col):
     #Get the list of image files under the directory
