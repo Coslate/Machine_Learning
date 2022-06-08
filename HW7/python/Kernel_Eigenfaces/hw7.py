@@ -40,25 +40,44 @@ class color:
 def main():
     #Process the argument
     print(f"> ArgumentParser...")
-    (input_training_dir, input_testing_dir, largest_k_pca, largest_k_lda, output_dir, k_nearest_neighbor, row, col, auto_constraint, pol_gamma, pol_coef0, pol_degree, rbf_gamma, is_debug) = ArgumentParser()
+    (input_training_dir, input_testing_dir, largest_k_pca, largest_k_lda, output_dir, k_nearest_neighbor, row, col, auto_constraint, pol_gamma, pol_coef0, pol_degree, rbf_gamma, kernel_mode, is_debug) = ArgumentParser()
 
     print(f"> ReadInputFile...")
     train_img_data, train_img_label, row, col = ReadInputFile(input_training_dir, row, col)
     test_img_data, test_img_label, row, col   = ReadInputFile(input_testing_dir, row, col)
 
-    print(f"> PerformPCA...")
-    PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir)
+    if(kernel_mode == 0):
+        print(f"> PerformPCA...")
+        PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir)
+        print(f"> PerformLDA...")
+        PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_lda, k_nearest_neighbor, row, col, output_dir, auto_constraint)
 
-    print(f"> PerformKernelPCA...")
-    print(f">> Linear Kernel...")
-    PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 0, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
-    print(f">> Polynomial Kernel...")
-    PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 1, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
-    print(f">> RBF Kernel...")
-    PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 2, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        '''
+        print(f"> PerformKernelPCA...")
+        print(f">> Linear Kernel...")
+        PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 0, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        print(f">> Polynomial Kernel...")
+        PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 1, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        print(f">> RBF Kernel...")
+        PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 2, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        '''
 
-    print(f"> PerformLDA...")
-    PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_lda, k_nearest_neighbor, row, col, output_dir, auto_constraint)
+    if(kernel_mode == 1):
+        print(f"> PerformKernelPCA2...")
+        print(f">> Linear Kernel...")
+        PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 0, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        print(f">> Polynomial Kernel...")
+        PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 1, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        print(f">> RBF Kernel...")
+        PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 2, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+
+        print(f"> PerformKernelLDA...")
+        print(f">> Linear Kernel...")
+        PerformKernelLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_lda, k_nearest_neighbor, row, col, output_dir, auto_constraint, 0, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        print(f">> Polynomial Kernel...")
+        PerformKernelLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_lda, k_nearest_neighbor, row, col, output_dir, auto_constraint, 1, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+        print(f">> RBF Kernel...")
+        PerformKernelLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_lda, k_nearest_neighbor, row, col, output_dir, auto_constraint, 2, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
     if(is_debug):
         pass
@@ -90,6 +109,7 @@ def ArgumentParser():
     pol_coef0           = 0
     pol_degree          = 3
     rbf_gamma           = 0.000001
+    kernel_mode         = 0
     is_debug            = 0
 
     parser = argparse.ArgumentParser()
@@ -105,6 +125,7 @@ def ArgumentParser():
     parser.add_argument("--pol_coef0",             "-pc",       help="The coef0 parameter of Polynomial Kernel. Default is 0.")
     parser.add_argument("--pol_degree",            "-pd",       help="The degree parameter of Polynomial Kernel. Default is 3.")
     parser.add_argument("--rbf_gamma",             "-rg",       help="The gamma parameter of RBF Kernel. Default is 0.000001.")
+    parser.add_argument("--kernel_mode",           "-km",       help="Set 1 for kernel PCA/LDA. Set 0 for PCA/LDA. Default is 0.")
     parser.add_argument("--output_dir",            "-odr",      help="The output directory of the result. Default is './output'")
     parser.add_argument("--is_debug",              "-isd",      help="1 for debug mode; 0 for normal mode.")
 
@@ -134,6 +155,8 @@ def ArgumentParser():
         pol_degree         = float(args.pol_degree)
     if(args.rbf_gamma):
         rbf_gamma          = float(args.rbf_gamma)
+    if(args.kernel_mode):
+        kernel_mode        = int(args.kernel_mode)
     if(args.output_dir):
         output_dir         = args.output_dir
     if(args.is_debug):
@@ -160,10 +183,11 @@ def ArgumentParser():
         print(f"pol_coef0            = {pol_coef0}")
         print(f"pol_degree           = {pol_degree}")
         print(f"rbf_gamma            = {rbf_gamma}")
+        print(f"kernel_mode          = {kernel_mode}")
         print(f"output_dir           = {output_dir}")
         print(f"is_debug             = {is_debug}")
 
-    return (input_training_dir, input_testing_dir, largest_k_pca, largest_k_lda, output_dir, k_nearest_neighbor, row, col, auto_constraint, pol_gamma, pol_coef0, pol_degree, rbf_gamma, is_debug)
+    return (input_training_dir, input_testing_dir, largest_k_pca, largest_k_lda, output_dir, k_nearest_neighbor, row, col, auto_constraint, pol_gamma, pol_coef0, pol_degree, rbf_gamma, kernel_mode, is_debug)
 
 def FormMatrixLDA(data_matrix, label_matrix):
     N          = data_matrix.shape[0] #135
@@ -225,8 +249,7 @@ def FormKernelMatrixPCA(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_de
 
     #Calculate kernel matrix
     if(kernel_choice == 0):  #Linear
-        #kernel_mat = data_matrix.T @ data_matrix
-        kernel_mat  = data_matrix.T.dot(data_matrix)
+        kernel_mat = data_matrix.T @ data_matrix
     elif(kernel_choice == 1):#Polynomial
         kernel_mat = np.power((pol_gamma*(data_matrix.T @ data_matrix) + pol_coef0), pol_degree)
     elif(kernel_choice == 2):#RBF
@@ -329,29 +352,41 @@ def FacesReconstruction(train_img_data, eigen_mat, directory, row, col, out_file
         img_data_gen = Image.fromarray(img_data_gen)
         img_data_gen.save(out_file_recon_name)
 
-def ConvertToLowDimension(input_img_arr, eigen_mat):
+def ConvertToLowDimension(input_img_arr, eigen_mat, kernel_mode, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma, train_img_data):
     N          = input_img_arr.shape[0]
     orig_dim   = input_img_arr.shape[1]
     new_dim    = eigen_mat.shape[1]
     low_dim_z  = np.zeros((N, new_dim), dtype=np.float64)
 
-    for i in range(N):
-        picked_x      = input_img_arr[i].astype(np.float64)
-        low_dim_z[i]  = picked_x.reshape(1, orig_dim) @ eigen_mat
+    if(kernel_mode == 1):
+        if(kernel_choice == 0):  #Linear
+            K_mat = train_img_data @ input_img_arr.T #Nxnj
+        elif(kernel_choice == 1):#Polynomial
+            K_mat = np.power((pol_gamma*(train_img_data @ input_img_arr.T) + pol_coef0), pol_degree) #Nxnj
+        elif(kernel_choice == 2):#RBF
+            K_mat = np.exp(-rbf_gamma*(distance.cdist(train_img_data, input_img_arr, 'sqeuclidean'))) #Nxnj
+
+        x_trans = eigen_mat.T @ K_mat #kxN
+        low_dim_z = x_trans.T #Nxk
+    else:
+        for i in range(N):
+            picked_x      = input_img_arr[i].astype(np.float64)
+            low_dim_z[i]  = picked_x.reshape(1, orig_dim) @ eigen_mat
 
     return low_dim_z
 
-def Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, out_file_name, largest_k):
+def Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, out_file_name, largest_k, kernel_mode, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     else:
+        pass
         #clean all gif and png files
-        for zippath in glob.iglob(os.path.join(output_dir, '*.txt')):
-            os.remove(zippath)
+        #for zippath in glob.iglob(os.path.join(output_dir, '*.txt')):
+        #    os.remove(zippath)
 
     #Transform the high dimension data to low dimension data
-    train_z = ConvertToLowDimension(train_img_data, eigen_mat)
-    test_z  = ConvertToLowDimension(test_img_data, eigen_mat)
+    train_z = ConvertToLowDimension(train_img_data, eigen_mat, kernel_mode, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma, train_img_data)
+    test_z  = ConvertToLowDimension(test_img_data, eigen_mat, kernel_mode, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma, train_img_data)
 
     #Find the most frequent label among k-nearest neighbors
     correct = 0
@@ -361,10 +396,6 @@ def Classification(test_img_data, test_img_label, train_img_data, train_img_labe
             dist[train_idx] = np.linalg.norm(test_z[test_idx]-train_z[train_idx])
 
         #Form k-nearest neighbors
-        #print(f"dist.shape = {dist.shape}")
-        #print(f"type(dist) = {type(dist)}")
-        #print(f"dist = {dist}")
-
         k = 0
         k_min_index = np.zeros(k_nearest_neighbor, dtype=int)
         while(k < k_nearest_neighbor):
@@ -372,38 +403,133 @@ def Classification(test_img_data, test_img_label, train_img_data, train_img_labe
             dist[k_min_index[k]] = np.inf
             k+=1
 
-        #print(f"k_min_index.shape = {k_min_index.shape}")
-        #print(f"type(k_min_index) = {type(k_min_index)}")
-        #print(f"k_min_index = {k_min_index}")
-
         #Find the most frequent label among the k-nearest neighbors
         statistic_label = np.zeros(max(train_img_label)+1, dtype=int)
         for i in range(k_nearest_neighbor):
-            #print(f"train_img_label[{k_min_index[i]}] = {train_img_label[k_min_index[i]]}")
             statistic_label[train_img_label[k_min_index[i]]] += 1
         most_likely_label = np.argmax(statistic_label)
-        #print(f"train_img_label = {train_img_label}")
-        #print(f"most_likely_label = {most_likely_label}")
         if(most_likely_label == test_img_label[test_idx]):
             correct += 1
 
-    print(f"correct = {correct}")
-    output_file_name = output_dir+"/"+out_file_name+"_classification.txt"
-    lines = [f"Use first {largest_k} largest eigenvectors, ", f"knn with k = {k_nearest_neighbor}, ", f"#correctly classified = {correct}, ", f"#total = {test_img_label.shape[0]}, ", f"accuracy = {(correct/test_img_label.shape[0])*100}%"]
-    with open(output_file_name, 'w') as f:
-        for line in lines:
-            f.write(line)
-            f.write('\n')
+    if(kernel_mode == 1):
+        if(kernel_choice == 0):
+            output_file_name = output_dir+"/"+out_file_name+"_k_"+str(k_nearest_neighbor)+"_lin_"+str(correct)+"_classification.txt"
+            lines = [f"Linear Kernel, ", f"Use first {largest_k} largest eigenvectors, ", f"knn with k = {k_nearest_neighbor}, ", f"#correctly classified = {correct}, ", f"#total = {test_img_label.shape[0]}, ", f"accuracy = {(correct/test_img_label.shape[0])*100}%"]
+        elif(kernel_choice == 1):
+            output_file_name = output_dir+"/"+out_file_name+"_k_"+str(k_nearest_neighbor)+"_pol_gamma_"+str(pol_gamma)+"_coef0_"+str(pol_coef0)+"_degree_"+str(pol_degree)+"_"+str(correct)+"_classification.txt"
+            lines = [f"Polynomial Kernel, ", f"pol_gamma = {pol_gamma}, ", f"pol_coef0 = {pol_coef0}, ", f"pol_degree = {pol_degree}, ", f"Use first {largest_k} largest eigenvectors, ", f"knn with k = {k_nearest_neighbor}, ", f"#correctly classified = {correct}, ", f"#total = {test_img_label.shape[0]}, ", f"accuracy = {(correct/test_img_label.shape[0])*100}%"]
+        elif(kernel_choice == 2):
+            output_file_name = output_dir+"/"+out_file_name+"_k_"+str(k_nearest_neighbor)+"_rbf_gamma_"+str(rbf_gamma)+"_"+str(correct)+"_classification.txt"
+            lines = [f"RBF Kernel, ", f"rbf_gamma = {rbf_gamma}, ", f"Use first {largest_k} largest eigenvectors, ", f"knn with k = {k_nearest_neighbor}, ", f"#correctly classified = {correct}, ", f"#total = {test_img_label.shape[0]}, ", f"accuracy = {(correct/test_img_label.shape[0])*100}%"]
+
+        with open(output_file_name, 'w') as f:
+            for line in lines:
+                f.write(line)
+                f.write('\n')
+    else:
+        output_file_name = output_dir+"/"+out_file_name+"_k_"+str(k_nearest_neighbor)+"_classification.txt"
+        lines = [f"Use first {largest_k} largest eigenvectors, ", f"knn with k = {k_nearest_neighbor}, ", f"#correctly classified = {correct}, ", f"#total = {test_img_label.shape[0]}, ", f"accuracy = {(correct/test_img_label.shape[0])*100}%"]
+        with open(output_file_name, 'w') as f:
+            for line in lines:
+                f.write(line)
+                f.write('\n')
+
+def FormKernelMatrixLDA(data_matrix, label_matrix, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+    N           = data_matrix.shape[0] #135
+    data_matrix = data_matrix.astype(np.float64) #Nxd
+
+    #Get the mean of each class
+    class_data = {}
+    for i in range(N):
+        if(not (label_matrix[i] in class_data.keys())):
+            class_data[label_matrix[i]]  = [data_matrix[i].astype(np.float64)]
+        else:
+            class_data[label_matrix[i]].append(data_matrix[i].astype(np.float64))
+
+    #Calculate kernel matrix
+    if(kernel_choice == 0):  #Linear
+        kernel_mat = data_matrix @ data_matrix.T
+    elif(kernel_choice == 1):#Polynomial
+        kernel_mat = np.power((pol_gamma*(data_matrix @ data_matrix.T) + pol_coef0), pol_degree)
+    elif(kernel_choice == 2):#RBF
+        kernel_mat = np.exp(-rbf_gamma*(distance.cdist(data_matrix, data_matrix, 'sqeuclidean')))
+
+    #Calculate m*
+    m_star = (1/N)*kernel_mat.sum(axis=1).reshape(-1, 1) #Nx1
+
+    #Calculate mj and M_mat:
+    M_mat = np.zeros((N, N), dtype=np.float64)
+    for j in class_data.keys(): #foreach class label j
+        x_class = np.array(class_data[j]) #njxd
+        nj      = x_class.shape[0] #number of the data in class j
+
+        #mj:
+        if(kernel_choice == 0):  #Linear
+            kernel_mj_mat = data_matrix @ x_class.T #Nxnj
+        elif(kernel_choice == 1):#Polynomial
+            kernel_mj_mat = np.power((pol_gamma*(data_matrix @ x_class.T) + pol_coef0), pol_degree) #Nxnj
+        elif(kernel_choice == 2):#RBF
+            kernel_mj_mat = np.exp(-rbf_gamma*(distance.cdist(data_matrix, x_class, 'sqeuclidean'))) #Nxnj
+
+        mj = (1/nj)*kernel_mj_mat.sum(axis=1).reshape(-1, 1) #Nx1
+
+        #M_mat:
+        M_mat += (nj * ((mj-m_star) @ (mj-m_star).T))
+
+    #Calculate N_mat:
+    N_mat = np.zeros((N, N), dtype=np.float64)
+    for j in class_data.keys(): #foreach class label j
+        x_class = np.array(class_data[j]) #njxd
+        nj      = x_class.shape[0] #number of the data in class j
+
+        if(kernel_choice == 0):  #Linear
+            Kj_mat = data_matrix @ x_class.T #Nxnj
+        elif(kernel_choice == 1):#Polynomial
+            Kj_mat = np.power((pol_gamma*(data_matrix @ x_class.T) + pol_coef0), pol_degree) #Nxnj
+        elif(kernel_choice == 2):#RBF
+            Kj_mat = np.exp(-rbf_gamma*(distance.cdist(data_matrix, x_class, 'sqeuclidean'))) #Nxnj
+
+        Hj_mat = np.eye(nj) - (1/nj)*np.ones((nj, nj))
+        N_mat += (Kj_mat @ Hj_mat @ Kj_mat.T)
+
+
+    theta_mat = np.linalg.pinv(N_mat) @ M_mat
+
+    return theta_mat, len(class_data.keys())
+
+
+def PerformKernelLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, auto_constraint, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+    if(kernel_choice == 0):
+        kernel_name = "Linear"
+    elif(kernel_choice == 1):
+        kernel_name = "Polynomial"
+    elif(kernel_choice == 2):
+        kernel_name = "RBF"
+
+    output_dir += "/Kernel_"+kernel_name+"_LDA"
+
+    #Form the covariance matrix
+    theta_mat, total_class_num  = FormKernelMatrixLDA(train_img_data, train_img_label, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+
+    #Constraint by rank of sb
+    if(auto_constraint and (largest_k > total_class_num)):
+        largest_k = total_class_num - 1
+
+    #Do the eigen decomposition on the covariance matrix
+    eigen_mat  = FormMaxKEigenMatrix(theta_mat, theta_mat.shape[0], largest_k)
+
+    #Classification on testing images
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "lda_knn", largest_k, 1, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
 def PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, auto_constraint):
     output_dir += "/LDA"
 
-    #Form the covariance matrix
+    #Form the matrix
     w_mat, total_class_num  = FormMatrixLDA(train_img_data, train_img_label)
 
     #Constraint by rank of sb
     if(auto_constraint and (largest_k > total_class_num)):
-        largest_k = total_class_num
+        largest_k = total_class_num - 1
 
     #Do the eigen decomposition on the covariance matrix
     eigen_mat  = FormMaxKEigenMatrix(w_mat, w_mat.shape[0], largest_k)
@@ -415,7 +541,45 @@ def PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, l
     FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "lda", largest_k)
 
     #Classification on testing images
-    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "lda_knn", largest_k)
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "lda_knn", largest_k, 0, 0, 0, 0, 0, 0)
+
+def FormKernelMatrixPCA2(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+    N           = data_matrix.shape[0] #135
+    data_matrix = data_matrix.astype(np.float64) #Nxd
+
+    #Calculate kernel matrix
+    if(kernel_choice == 0):  #Linear
+        kernel_mat = data_matrix @ data_matrix.T #NxN
+    elif(kernel_choice == 1):#Polynomial
+        kernel_mat = np.power((pol_gamma*(data_matrix @ data_matrix.T) + pol_coef0), pol_degree) #NxN
+    elif(kernel_choice == 2):#RBF
+        kernel_mat = np.exp(-rbf_gamma*(distance.cdist(data_matrix, data_matrix, 'sqeuclidean'))) #NxN
+
+    #Adjust center point
+    one_n_mat    = np.full((N, N), 1/N, dtype=np.float64)
+    kernel_c_mat = kernel_mat - one_n_mat@kernel_mat - kernel_mat@one_n_mat + one_n_mat@kernel_mat@one_n_mat
+
+    return kernel_c_mat
+
+
+def PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+    if(kernel_choice == 0):
+        kernel_name = "Linear"
+    elif(kernel_choice == 1):
+        kernel_name = "Polynomial"
+    elif(kernel_choice == 2):
+        kernel_name = "RBF"
+
+    output_dir += "/Kernel_"+kernel_name+"_PCA2"
+
+    #Form the covariance matrix
+    kernel_c_mat = FormKernelMatrixPCA2(train_img_data, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+
+    #Do the eigen decomposition on the covariance matrix
+    eigen_mat  = FormMaxKEigenMatrix(kernel_c_mat, kernel_c_mat.shape[0], largest_k)
+
+    #Classification on testing images
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k, 1, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
 def PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
     if(kernel_choice == 0):
@@ -439,7 +603,7 @@ def PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_la
     FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "kernel_pca", largest_k)
 
     #Classification on testing images
-    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k)
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k, 0, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
 def PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir):
     output_dir += "/PCA"
@@ -457,7 +621,7 @@ def PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, l
     FacesReconstruction(train_img_data, eigen_mat, output_dir, row, col, "pca", largest_k)
 
     #Classification on testing images
-    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k)
+    Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k, 0, 0, 0, 0, 0, 0)
 
 def ReadInputFile(input_directory, row, col):
     #Get the list of image files under the directory
