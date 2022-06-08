@@ -52,7 +52,7 @@ def main():
         print(f"> PerformLDA...")
         PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_lda, k_nearest_neighbor, row, col, output_dir, auto_constraint)
 
-        '''
+    if(kernel_mode == 1):
         print(f"> PerformKernelPCA...")
         print(f">> Linear Kernel...")
         PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 0, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
@@ -60,16 +60,6 @@ def main():
         PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 1, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
         print(f">> RBF Kernel...")
         PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 2, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
-        '''
-
-    if(kernel_mode == 1):
-        print(f"> PerformKernelPCA2...")
-        print(f">> Linear Kernel...")
-        PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 0, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
-        print(f">> Polynomial Kernel...")
-        PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 1, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
-        print(f">> RBF Kernel...")
-        PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k_pca, k_nearest_neighbor, row, col, output_dir, 2, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
         print(f"> PerformKernelLDA...")
         print(f">> Linear Kernel...")
@@ -243,6 +233,7 @@ def FormMatrixLDA(data_matrix, label_matrix):
 
     return w_mat, len(class_num)
 
+    '''
 def FormKernelMatrixPCA(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
     N           = data_matrix.shape[1]
     data_matrix = data_matrix.astype(np.float64)
@@ -260,6 +251,7 @@ def FormKernelMatrixPCA(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_de
     kernel_c_mat = kernel_mat - one_n_mat@kernel_mat - kernel_mat@one_n_mat + one_n_mat@kernel_mat@one_n_mat
 
     return kernel_c_mat
+    '''
 
 def FormCovMatrixPCA(data_matrix):
     N          = data_matrix.shape[0] #135
@@ -543,7 +535,7 @@ def PerformLDA(train_img_data, train_img_label, test_img_data, test_img_label, l
     #Classification on testing images
     Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "lda_knn", largest_k, 0, 0, 0, 0, 0, 0)
 
-def FormKernelMatrixPCA2(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+def FormKernelMatrixPCA(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
     N           = data_matrix.shape[0] #135
     data_matrix = data_matrix.astype(np.float64) #Nxd
 
@@ -562,7 +554,7 @@ def FormKernelMatrixPCA2(data_matrix, kernel_choice, pol_gamma, pol_coef0, pol_d
     return kernel_c_mat
 
 
-def PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
+def PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
     if(kernel_choice == 0):
         kernel_name = "Linear"
     elif(kernel_choice == 1):
@@ -570,10 +562,10 @@ def PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_l
     elif(kernel_choice == 2):
         kernel_name = "RBF"
 
-    output_dir += "/Kernel_"+kernel_name+"_PCA2"
+    output_dir += "/Kernel_"+kernel_name+"_PCA"
 
     #Form the covariance matrix
-    kernel_c_mat = FormKernelMatrixPCA2(train_img_data, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+    kernel_c_mat = FormKernelMatrixPCA(train_img_data, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
     #Do the eigen decomposition on the covariance matrix
     eigen_mat  = FormMaxKEigenMatrix(kernel_c_mat, kernel_c_mat.shape[0], largest_k)
@@ -581,6 +573,7 @@ def PerformKernelPCA2(train_img_data, train_img_label, test_img_data, test_img_l
     #Classification on testing images
     Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k, 1, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
 
+    '''
 def PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma):
     if(kernel_choice == 0):
         kernel_name = "Linear"
@@ -604,6 +597,7 @@ def PerformKernelPCA(train_img_data, train_img_label, test_img_data, test_img_la
 
     #Classification on testing images
     Classification(test_img_data, test_img_label, train_img_data, train_img_label, eigen_mat, output_dir, row, col, k_nearest_neighbor, "pca_knn", largest_k, 0, kernel_choice, pol_gamma, pol_coef0, pol_degree, rbf_gamma)
+    '''
 
 def PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, largest_k, k_nearest_neighbor, row, col, output_dir):
     output_dir += "/PCA"
