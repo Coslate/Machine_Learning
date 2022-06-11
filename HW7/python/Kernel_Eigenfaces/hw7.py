@@ -620,12 +620,6 @@ def PerformPCA(train_img_data, train_img_label, test_img_data, test_img_label, l
 def ReadInputFile(input_directory, row, col):
     #Get the list of image files under the directory
     img_filename = []
-#    row = 100
-#    col = 100
-#    row = 29
-#    col = 41
-#    row = 29
-#    col = 24
 
     for file in glob.glob(input_directory+"/*.pgm"):
         img_filename.append(file)
