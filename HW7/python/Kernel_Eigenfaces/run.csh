@@ -1,6 +1,5 @@
 #! /bin/csh -f
 
-#./hw7.py -itrd ./Yale_Face_Database/Training -ited ./Yale_Face_Database/Testing -isd 1 -lmk_pca 25 -lmk_lda 25 -knn 5 -row 50 -col 50 -auc 0 -rg 0.000001 -odr "/home/bcc/File_Change/Machine_Learning/HW7/Output_Kernel_Eigenfaces"
 set experiment_s    = 1
 set experiment_t    = 1
 set pol_g_list  = (0.00000003 0.00390625 0.0004 0.000001 0.0001 0.001 0.01 0.1 1 10 100 1000 10000 300000)
